@@ -53,7 +53,7 @@
               <span>Pudding.bg • Cepat, Halus & Tanpa Watermark</span>
             </div>
             <h1 class="upload-headline">Hapus Background Sehalus Puding</h1>
-            <p class="upload-subheadline">Langsung buka foto instan dengan 4 pilihan alat potong: tembak warna 1-klik, kuas hapus, pulihkan 100%, dan kotak seleksi.</p>
+            <p class="upload-subheadline">Langsung buka foto instan dengan pilihan alat potong & pulih: tembak warna 1-klik, pulih otomatis di sudut mana saja, kuas manual, dan kotak seleksi.</p>
           </div>
 
           <div class="upload-box-wrapper">
@@ -108,10 +108,10 @@
                 </div>
               </div>
               <div class="feature-card">
-                <div class="feature-icon-wrapper">🖌️</div>
+                <div class="feature-icon-wrapper">🪄</div>
                 <div class="feature-text">
-                  <h4 class="feature-title">Pulihkan 100% Akurat</h4>
-                  <p class="feature-desc">Sapukan kuas untuk mengembalikan foto asli tanpa geser atau duplikasi piksel.</p>
+                  <h4 class="feature-title">Pulih Otomatis & Kuas</h4>
+                  <p class="feature-desc">Klik sudut atau titik untuk pulih otomatis, atau sapukan kuas manual 100% presisi.</p>
                 </div>
               </div>
               <div class="feature-card">
@@ -296,15 +296,21 @@
                 </div>
 
                 <div class="section-card-header mb-10">
-                  <span class="method-label">Pilih Alat Hapus:</span>
+                  <span class="method-label">Pilih Alat Potong & Pulihkan:</span>
                 </div>
 
-                <!-- Mode Selector Grid (4 Alat: Tembak Warna, Kuas Hapus, Pulihkan, Kotak Seleksi) -->
+                <!-- Mode Selector Grid (5 Alat: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan, Kotak Seleksi) -->
                 <div class="cutout-tools-grid mb-14">
                   <button type="button" class="tool-select-btn active" id="btn-mode-color-wand" data-mode="color-wand">
                     <div class="tool-select-icon purple">🎯</div>
                     <div class="tool-select-name">Tembak Warna</div>
-                    <div class="tool-select-hint">1-Klik Titik</div>
+                    <div class="tool-select-hint">1-Klik Hapus</div>
+                  </button>
+
+                  <button type="button" class="tool-select-btn" id="btn-mode-restore-wand" data-mode="restore-wand">
+                    <div class="tool-select-icon blue">🪄</div>
+                    <div class="tool-select-name">Pulih Otomatis</div>
+                    <div class="tool-select-hint">1-Klik Sudut</div>
                   </button>
 
                   <button type="button" class="tool-select-btn" id="btn-mode-erase" data-mode="erase">
@@ -314,19 +320,21 @@
                   </button>
 
                   <button type="button" class="tool-select-btn" id="btn-mode-restore" data-mode="restore">
-                    <div class="tool-select-icon blue">🖌️</div>
-                    <div class="tool-select-name">Pulihkan</div>
-                    <div class="tool-select-hint">Asli 100%</div>
+                    <div class="tool-select-icon teal">🖌️</div>
+                    <div class="tool-select-name">Kuas Pulihkan</div>
+                    <div class="tool-select-hint">Pulih Manual</div>
                   </button>
 
-                  <button type="button" class="tool-select-btn" id="btn-mode-box-select" data-mode="box-select">
+                  <button type="button" class="tool-select-btn full-width" id="btn-mode-box-select" data-mode="box-select">
                     <div class="tool-select-icon amber">✂️</div>
-                    <div class="tool-select-name">Kotak Seleksi</div>
-                    <div class="tool-select-hint">Pilih Bidang</div>
+                    <div class="tool-select-col">
+                      <div class="tool-select-name">Kotak Seleksi Bidang</div>
+                      <div class="tool-select-hint">Pilih area kotak untuk potong luar / dalam</div>
+                    </div>
                   </button>
                 </div>
 
-                <!-- Controls for Mode: Tembak Warna -->
+                <!-- Controls for Mode: Tembak Warna (Hapus) -->
                 <div class="tool-sub-controls" id="sub-controls-color-wand">
                   <div class="side-card-field">
                     <div class="field-header">
@@ -344,6 +352,43 @@
                     <div>
                       <div class="toggle-title">Area Terhubung Saja</div>
                       <div class="toggle-sub">Hanya warna yang menyambung (tidak merusak objek)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Controls for Mode: Pulih Otomatis (1-Klik Sudut / Titik) -->
+                <div class="tool-sub-controls hidden" id="sub-controls-restore-wand">
+                  <div class="side-card-field mb-10">
+                    <div class="field-header">
+                      <span>Target Pemulihan</span>
+                    </div>
+                    <div class="segmented-control" id="restore-type-segmented">
+                      <button type="button" class="segment-btn active" id="btn-restore-target-color" data-target="color">
+                        🎯 Warna Asli
+                      </button>
+                      <button type="button" class="segment-btn" id="btn-restore-target-all" data-target="all-transparent">
+                        🧩 Seluruh Area Terhapus
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="side-card-field">
+                    <div class="field-header">
+                      <span>Kepekaan Warna (Toleransi)</span>
+                      <span id="restore-tolerance-display">25%</span>
+                    </div>
+                    <input type="range" id="restore-tolerance-input" min="1" max="75" value="25" />
+                    <div class="field-hint-text">💡 <strong>Cara pakai:</strong> Cukup klik pada sudut atau area yang terhapus untuk memulihkan foto asli seketika.</div>
+                  </div>
+
+                  <div class="side-card-toggle-row mt-8">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="check-contiguous-restore" checked />
+                      <span class="slider round"></span>
+                    </label>
+                    <div>
+                      <div class="toggle-title">Area Terhubung Saja</div>
+                      <div class="toggle-sub">Hanya memulihkan bagian yang tersambung dari titik klik</div>
                     </div>
                   </div>
                 </div>

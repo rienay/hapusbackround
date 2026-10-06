@@ -15,11 +15,14 @@ const appState = {
   isDraggingSlider: false,
   activePanel: 'panel-cutout', // 'panel-cutout' | 'panel-background' | 'panel-effects' | 'panel-adjust' | null
 
-  // Cutout 5 Methods State
-  cutoutMode: 'color-wand', // 'color-wand' | 'erase' | 'restore' | 'box-select'
+  // Cutout Methods State
+  cutoutMode: 'color-wand', // 'color-wand' | 'restore-wand' | 'erase' | 'restore' | 'box-select'
   brushSize: 30,
   colorTolerance: 25,
   isContiguousColor: true,
+  restoreTolerance: 25,
+  isContiguousRestore: true,
+  restoreFillType: 'color', // 'color' | 'all-transparent'
   isPainting: false,
   lastPaintPos: null,
 
@@ -71,12 +74,18 @@ const els = {
   // Cutout Tools
   toolSelectBtns: document.querySelectorAll('.tool-select-btn'),
   subControlsColorWand: document.getElementById('sub-controls-color-wand'),
+  subControlsRestoreWand: document.getElementById('sub-controls-restore-wand'),
   subControlsBrush: document.getElementById('sub-controls-brush'),
   subControlsBoxSelect: document.getElementById('sub-controls-box-select'),
 
   colorToleranceInput: document.getElementById('color-tolerance-input'),
   colorToleranceDisplay: document.getElementById('color-tolerance-display'),
   checkContiguousColor: document.getElementById('check-contiguous-color'),
+
+  restoreToleranceInput: document.getElementById('restore-tolerance-input'),
+  restoreToleranceDisplay: document.getElementById('restore-tolerance-display'),
+  checkContiguousRestore: document.getElementById('check-contiguous-restore'),
+  restoreTargetSegmentBtns: document.querySelectorAll('#restore-type-segmented .segment-btn'),
 
   brushSizeInput: document.getElementById('brush-size-input'),
   brushSizeDisplay: document.getElementById('brush-size-display'),
@@ -449,13 +458,16 @@ function updateCutoutModeUI() {
   if (els.subControlsColorWand) {
     els.subControlsColorWand.classList.toggle('hidden', appState.cutoutMode !== 'color-wand');
   }
+  if (els.subControlsRestoreWand) {
+    els.subControlsRestoreWand.classList.toggle('hidden', appState.cutoutMode !== 'restore-wand');
+  }
   if (els.subControlsBrush) {
     els.subControlsBrush.classList.toggle('hidden', appState.cutoutMode !== 'erase' && appState.cutoutMode !== 'restore');
     if (els.brushHintText) {
       if (appState.cutoutMode === 'erase') {
         els.brushHintText.innerHTML = '💡 <strong>Kuas Hapus:</strong> Sapukan kuas pada foto untuk menghapus bagian yang tidak diinginkan.';
       } else {
-        els.brushHintText.innerHTML = '💡 <strong>Pulihkan:</strong> Sapukan kuas untuk mengembalikan foto asli 100% presisi tanpa geser.';
+        els.brushHintText.innerHTML = '💡 <strong>Kuas Pulihkan:</strong> Sapukan kuas untuk mengembalikan foto asli 100% presisi secara manual.';
       }
     }
   }
@@ -470,14 +482,14 @@ function updateCutoutModeUI() {
     return;
   }
 
-  if (appState.cutoutMode === 'color-wand') {
+  if (appState.cutoutMode === 'color-wand' || appState.cutoutMode === 'restore-wand') {
     els.brushCanvas.style.cursor = 'crosshair';
     if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
   } else if (appState.cutoutMode === 'box-select') {
     els.brushCanvas.style.cursor = 'crosshair';
     if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
   } else {
-    // Erase or Restore: use custom circular cursor indicator
+    // Erase or Restore brush: use custom circular cursor indicator
     els.brushCanvas.style.cursor = 'none';
     updateBrushCursorIndicator();
   }
@@ -613,6 +625,156 @@ function shootColor(ix, iy) {
 
   updateActiveThumb();
   showToast(`🎯 Warna berhasil ditembak & dihapus! (${erasedCount.toLocaleString()} px)`);
+}
+
+/* ==========================================================================
+   ALAT 2: Pulih Otomatis (Restore Wand / 1-Klik Titik Pulih)
+   ========================================================================== */
+function shootRestore(ix, iy) {
+  const item = getActiveItem();
+  if (!item) return;
+
+  const canvas = els.brushCanvas;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (ix < 0 || ix >= w || iy < 0 || iy >= h) return;
+
+  // 1. Current canvas state (with transparent / edited pixels)
+  const curImgData = ctx.getImageData(0, 0, w, h);
+  const curData = curImgData.data;
+
+  // 2. Original pristine canvas state
+  const origCtx = item.originalCanvas.getContext('2d', { willReadFrequently: true });
+  const origImgData = origCtx.getImageData(0, 0, w, h);
+  const origData = origImgData.data;
+
+  const startIdx = (iy * w + ix) * 4;
+  const origR = origData[startIdx];
+  const origG = origData[startIdx + 1];
+  const origB = origData[startIdx + 2];
+  const origA = origData[startIdx + 3];
+
+  if (origA === 0) {
+    showToast('Titik ini memang transparan di foto asli.');
+    return;
+  }
+
+  // Tolerance Euclidean distance threshold
+  const maxDist = (appState.restoreTolerance / 100) * 441.67;
+
+  function isMatchOrig(r, g, b, a) {
+    if (a === 0) return false;
+    const dr = r - origR;
+    const dg = g - origG;
+    const db = b - origB;
+    return Math.sqrt(dr * dr + dg * dg + db * db) <= maxDist;
+  }
+
+  let restoredCount = 0;
+  const isAllTransparentMode = appState.restoreFillType === 'all-transparent';
+
+  if (appState.isContiguousRestore) {
+    // Smart Contiguous Flood Fill (BFS)
+    const visited = new Uint8Array(w * h);
+    const queue = [ix, iy];
+    visited[iy * w + ix] = 1;
+    let head = 0;
+
+    while (head < queue.length) {
+      const cx = queue[head++];
+      const cy = queue[head++];
+      const idx = (cy * w + cx) * 4;
+
+      // Restore if pixel currently differs from pristine original
+      if (curData[idx + 3] !== origData[idx + 3] ||
+          curData[idx] !== origData[idx] ||
+          curData[idx + 1] !== origData[idx + 1] ||
+          curData[idx + 2] !== origData[idx + 2]) {
+        curData[idx] = origData[idx];
+        curData[idx + 1] = origData[idx + 1];
+        curData[idx + 2] = origData[idx + 2];
+        curData[idx + 3] = origData[idx + 3];
+        restoredCount++;
+      }
+
+      const neighbors = [
+        [cx + 1, cy],
+        [cx - 1, cy],
+        [cx, cy + 1],
+        [cx, cy - 1]
+      ];
+
+      for (let i = 0; i < 4; i++) {
+        const nx = neighbors[i][0];
+        const ny = neighbors[i][1];
+        if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+          const nPos = ny * w + nx;
+          if (!visited[nPos]) {
+            visited[nPos] = 1;
+            const nIdx = nPos * 4;
+
+            if (isAllTransparentMode) {
+              // Expand across currently erased / transparent pixels
+              if (curData[nIdx + 3] < 255) {
+                queue.push(nx, ny);
+              }
+            } else {
+              // Match original color with tolerance
+              if (isMatchOrig(origData[nIdx], origData[nIdx + 1], origData[nIdx + 2], origData[nIdx + 3])) {
+                queue.push(nx, ny);
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+    // Global Restore: Restore all matching pixels in whole image
+    const totalPixels = w * h;
+    for (let i = 0; i < totalPixels; i++) {
+      const idx = i * 4;
+      let shouldRestore = false;
+
+      if (isAllTransparentMode) {
+        shouldRestore = (curData[idx + 3] < 255);
+      } else {
+        shouldRestore = isMatchOrig(origData[idx], origData[idx + 1], origData[idx + 2], origData[idx + 3]);
+      }
+
+      if (shouldRestore) {
+        if (curData[idx + 3] !== origData[idx + 3] ||
+            curData[idx] !== origData[idx] ||
+            curData[idx + 1] !== origData[idx + 1] ||
+            curData[idx + 2] !== origData[idx + 2]) {
+          curData[idx] = origData[idx];
+          curData[idx + 1] = origData[idx + 1];
+          curData[idx + 2] = origData[idx + 2];
+          curData[idx + 3] = origData[idx + 3];
+          restoredCount++;
+        }
+      }
+    }
+  }
+
+  if (restoredCount === 0) {
+    showToast('Area ini sudah dalam kondisi asli.');
+    return;
+  }
+
+  ctx.putImageData(curImgData, 0, 0);
+
+  // Sync to workingCanvas
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.putImageData(curImgData, 0, 0);
+
+  // Push history
+  item.history.push(ctx.getImageData(0, 0, w, h));
+  item.redoStack = [];
+
+  updateActiveThumb();
+  showToast(`🪄 Area berhasil dipulihkan otomatis! (${restoredCount.toLocaleString()} px)`);
 }
 
 /* ==========================================================================
@@ -821,9 +983,15 @@ function setupCanvasInteractions() {
 
     const coords = getCanvasCoords(e);
 
-    // CARA 2: Tembak Warna
+    // ALAT 1: Tembak Warna (1-Klik Hapus)
     if (appState.cutoutMode === 'color-wand') {
       shootColor(Math.floor(coords.x), Math.floor(coords.y));
+      return;
+    }
+
+    // ALAT 2: Pulih Otomatis (1-Klik Sudut / Titik Pulih)
+    if (appState.cutoutMode === 'restore-wand') {
+      shootRestore(Math.floor(coords.x), Math.floor(coords.y));
       return;
     }
 
@@ -1225,6 +1393,32 @@ function setupEventListeners() {
   els.checkContiguousColor.addEventListener('change', (e) => {
     appState.isContiguousColor = e.target.checked;
   });
+
+  // Pulih Otomatis Controls
+  if (els.restoreToleranceInput) {
+    els.restoreToleranceInput.addEventListener('input', (e) => {
+      appState.restoreTolerance = parseInt(e.target.value, 10);
+      if (els.restoreToleranceDisplay) {
+        els.restoreToleranceDisplay.textContent = `${appState.restoreTolerance}%`;
+      }
+    });
+  }
+
+  if (els.checkContiguousRestore) {
+    els.checkContiguousRestore.addEventListener('change', (e) => {
+      appState.isContiguousRestore = e.target.checked;
+    });
+  }
+
+  if (els.restoreTargetSegmentBtns) {
+    els.restoreTargetSegmentBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        els.restoreTargetSegmentBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        appState.restoreFillType = btn.getAttribute('data-target') || 'color';
+      });
+    });
+  }
 
   // Brush Controls
   els.brushSizeInput.addEventListener('input', (e) => {
