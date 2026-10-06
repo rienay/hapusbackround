@@ -1046,74 +1046,90 @@ function setupCompareSliderEvents() {
 /* ==========================================================================
    Export & Download
    ========================================================================== */
-async function renderExport(format = 'png') {
+async function renderExport(quality = 'hd') {
   const item = getActiveItem();
   if (!item) return null;
 
+  let targetWidth = item.width;
+  let targetHeight = item.height;
+
+  if (quality === 'standard') {
+    // Standard size: max 800px on long edge for fast & lightweight file
+    const maxDim = 800;
+    if (targetWidth > maxDim || targetHeight > maxDim) {
+      if (targetWidth >= targetHeight) {
+        targetHeight = Math.round((targetHeight / targetWidth) * maxDim);
+        targetWidth = maxDim;
+      } else {
+        targetWidth = Math.round((targetWidth / targetHeight) * maxDim);
+        targetHeight = maxDim;
+      }
+    }
+  }
+
   const canvas = els.renderExportCanvas;
-  canvas.width = item.width;
-  canvas.height = item.height;
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, targetWidth, targetHeight);
 
   // 1. Draw Background
-  if (format === 'jpg' || item.bgMode !== 'transparent') {
+  const isOpaque = item.bgMode !== 'transparent';
+  if (isOpaque) {
     if (item.bgMode === 'color') {
       ctx.fillStyle = item.bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
     } else if (item.bgMode === 'gradient') {
-      // Create diagonal linear gradient
-      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      const grad = ctx.createLinearGradient(0, 0, targetWidth, targetHeight);
       grad.addColorStop(0, '#fef3c7');
       grad.addColorStop(1, '#f59e0b');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
     } else if (item.bgMode === 'blur') {
       ctx.save();
       ctx.filter = `blur(${item.blurAmount}px)`;
-      ctx.drawImage(item.originalCanvas, -20, -20, canvas.width + 40, canvas.height + 40);
+      ctx.drawImage(item.originalCanvas, -20, -20, targetWidth + 40, targetHeight + 40);
       ctx.restore();
     } else if (item.bgMode === 'custom-img' && item.customBgUrl) {
       const bgImg = new Image();
       bgImg.crossOrigin = 'anonymous';
       await new Promise(r => { bgImg.onload = r; bgImg.src = item.customBgUrl; });
-      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-    } else if (format === 'jpg') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bgImg, 0, 0, targetWidth, targetHeight);
     }
   }
 
   // 2. Draw working cutout with filters
   ctx.save();
+  const scale = targetWidth / item.width;
   let filterParts = [];
   if (item.shadowOn) {
-    filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
+    filterParts.push(`drop-shadow(0px ${item.shadowOffset * scale}px ${item.shadowBlur * scale}px rgba(0, 0, 0, 0.45))`);
   }
   if (item.outlineOn) {
-    filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
+    filterParts.push(`drop-shadow(0 0 ${2 * scale}px #ffffff) drop-shadow(0 0 ${4 * scale}px #ffffff)`);
   }
   if (item.brightness !== 100) filterParts.push(`brightness(${item.brightness}%)`);
   if (item.contrast !== 100) filterParts.push(`contrast(${item.contrast}%)`);
 
   if (filterParts.length > 0) ctx.filter = filterParts.join(' ');
-  ctx.drawImage(item.workingCanvas, 0, 0);
+  ctx.drawImage(item.workingCanvas, 0, 0, targetWidth, targetHeight);
   ctx.restore();
 
-  const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
-  const quality = format === 'jpg' ? 0.92 : undefined;
+  const mime = isOpaque ? 'image/jpeg' : 'image/png';
+  const imgQuality = isOpaque ? (quality === 'hd' ? 0.95 : 0.85) : undefined;
 
-  return new Promise(resolve => canvas.toBlob(resolve, mime, quality));
+  return new Promise(resolve => canvas.toBlob(resolve, mime, imgQuality));
 }
 
-async function triggerDownload(format = 'png') {
-  const blob = await renderExport(format);
+async function triggerDownload(quality = 'hd') {
+  const blob = await renderExport(quality);
   if (!blob) return;
 
   const item = getActiveItem();
   const baseName = (item ? item.name : 'pudding_bg').replace(/\.[^/.]+$/, '');
-  const ext = format === 'jpg' ? 'jpg' : 'png';
-  const fileName = `${baseName}_cutout.${ext}`;
+  const ext = (item && item.bgMode !== 'transparent') ? 'jpg' : 'png';
+  const suffix = quality === 'hd' ? 'HD' : 'Standar';
+  const fileName = `${baseName}_${suffix}.${ext}`;
 
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -1122,22 +1138,73 @@ async function triggerDownload(format = 'png') {
   link.click();
   link.remove();
 
-  showToast(`✅ Berhasil mengunduh ${fileName}!`);
+  if (quality === 'hd') {
+    showToast(`✅ Berhasil mengunduh HD (${item ? `${item.width}×${item.height}px` : 'Resolusi Penuh'})!`);
+  } else {
+    showToast(`✅ Berhasil mengunduh versi Standar!`);
+  }
   confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
 }
 
 async function copyToClipboard() {
-  const blob = await renderExport('png');
-  if (!blob) return;
+  const item = getActiveItem();
+  if (!item) return;
 
   try {
+    const canvas = els.renderExportCanvas;
+    canvas.width = item.width;
+    canvas.height = item.height;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, item.width, item.height);
+
+    if (item.bgMode !== 'transparent') {
+      if (item.bgMode === 'color') {
+        ctx.fillStyle = item.bgColor;
+        ctx.fillRect(0, 0, item.width, item.height);
+      } else if (item.bgMode === 'gradient') {
+        const grad = ctx.createLinearGradient(0, 0, item.width, item.height);
+        grad.addColorStop(0, '#fef3c7');
+        grad.addColorStop(1, '#f59e0b');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, item.width, item.height);
+      } else if (item.bgMode === 'blur') {
+        ctx.save();
+        ctx.filter = `blur(${item.blurAmount}px)`;
+        ctx.drawImage(item.originalCanvas, -20, -20, item.width + 40, item.height + 40);
+        ctx.restore();
+      } else if (item.bgMode === 'custom-img' && item.customBgUrl) {
+        const bgImg = new Image();
+        bgImg.crossOrigin = 'anonymous';
+        await new Promise(r => { bgImg.onload = r; bgImg.src = item.customBgUrl; });
+        ctx.drawImage(bgImg, 0, 0, item.width, item.height);
+      }
+    }
+
+    ctx.save();
+    let filterParts = [];
+    if (item.shadowOn) {
+      filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
+    }
+    if (item.outlineOn) {
+      filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
+    }
+    if (item.brightness !== 100) filterParts.push(`brightness(${item.brightness}%)`);
+    if (item.contrast !== 100) filterParts.push(`contrast(${item.contrast}%)`);
+    if (filterParts.length > 0) ctx.filter = filterParts.join(' ');
+
+    ctx.drawImage(item.workingCanvas, 0, 0);
+    ctx.restore();
+
+    const pngBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    if (!pngBlob) throw new Error('Blob creation failed');
+
     await navigator.clipboard.write([
-      new ClipboardItem({ 'image/png': blob })
+      new ClipboardItem({ 'image/png': pngBlob })
     ]);
-    showToast('📋 Gambar transparan disalin ke Clipboard! Siap ditempel (Ctrl+V).');
+    showToast('📋 Gambar berhasil disalin! Siap ditempel (Ctrl+V).');
   } catch (err) {
     console.error('Clipboard copy error:', err);
-    showToast('Gagal menyalin otomatis. Gunakan opsi Unduh PNG.');
+    showToast('Gagal menyalin otomatis ke Clipboard.');
   }
 }
 
@@ -1409,7 +1476,7 @@ function setupEventListeners() {
   });
 
   // 9. Download Split Dropdown
-  els.btnMainDownload.addEventListener('click', () => triggerDownload('png'));
+  els.btnMainDownload.addEventListener('click', () => triggerDownload('hd'));
   els.btnDownloadOptionsToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     els.downloadDropdownMenu.classList.toggle('hidden');
@@ -1425,8 +1492,8 @@ function setupEventListeners() {
     item.addEventListener('click', () => {
       const action = item.getAttribute('data-action');
       els.downloadDropdownMenu.classList.add('hidden');
-      if (action === 'dl-png') triggerDownload('png');
-      else if (action === 'dl-jpg') triggerDownload('jpg');
+      if (action === 'dl-hd') triggerDownload('hd');
+      else if (action === 'dl-standard') triggerDownload('standard');
       else if (action === 'copy') copyToClipboard();
     });
   });
