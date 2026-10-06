@@ -568,7 +568,7 @@ button {
    ========================================================================== */
 #studio-screen {
   position: relative;
-  padding-bottom: 96px; /* Space for bottom gallery tray */
+  padding-bottom: 74px; /* Space for bottom gallery tray */
 }
 
 /* Top Action Bar (The Floating Pudding Island) */
@@ -576,8 +576,9 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 24px 8px;
-  position: relative;
+  padding: 10px 16px 4px;
+  position: sticky;
+  top: 68px;
   z-index: 40;
 }
 
@@ -729,27 +730,37 @@ button {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
-  max-width: 1300px;
-  margin: 16px auto 80px auto;
-  padding: 0 20px;
+  max-width: 1260px;
+  margin: 8px auto 20px auto;
+  padding: 0 16px;
   position: relative;
   flex: 1;
 }
 
 /* Tool Side Card (Pudding Studio Card) */
 .tool-side-card {
-  width: 324px;
+  width: 310px;
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
   background: var(--bg-card);
   border: 1.5px solid var(--border-color);
-  border-radius: 24px;
-  box-shadow: 0 20px 45px -8px rgba(180, 83, 9, 0.12), 0 4px 16px rgba(41, 37, 36, 0.04);
-  padding: 22px;
+  border-radius: 20px;
+  box-shadow: 0 16px 36px -6px rgba(180, 83, 9, 0.12), 0 2px 10px rgba(41, 37, 36, 0.04);
+  padding: 18px;
   position: relative;
   flex-shrink: 0;
   animation: sideCardIn 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 45;
+}
+
+.tool-side-card::-webkit-scrollbar {
+  width: 5px;
+}
+.tool-side-card::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
 }
 
 @keyframes sideCardIn {
@@ -1322,17 +1333,17 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  min-height: 480px;
+  padding: 0;
+  min-height: unset;
 }
 
 .canvas-card {
   position: relative;
-  max-width: 820px;
-  max-height: 520px;
-  border-radius: var(--radius-2xl);
+  max-width: 100%;
+  max-height: calc(100vh - 210px);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: 0 20px 48px -10px rgba(180, 83, 9, 0.16), 0 4px 16px rgba(41, 37, 36, 0.05);
+  box-shadow: 0 16px 40px -8px rgba(180, 83, 9, 0.14), 0 2px 10px rgba(41, 37, 36, 0.04);
   border: 1.5px solid var(--border-color);
   background: #ffffff;
   display: flex;
@@ -1371,44 +1382,40 @@ button {
   background-color: #121214;
 }
 
-/* Floating Quick Controls at bottom of Canvas */
-.canvas-floating-controls {
+/* Floating Canvas Corner Theme Badge (Top-Right inside canvas card) */
+.canvas-corner-theme-btn {
   position: absolute;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  top: 12px;
+  right: 12px;
   z-index: 25;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(16px);
-  padding: 6px 10px;
-  border-radius: var(--radius-full);
-  border: 1.5px solid var(--border-color);
-  box-shadow: 0 10px 25px -4px rgba(41, 37, 36, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.canvas-floating-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border-color);
   color: var(--text-main);
   font-size: 0.78rem;
   font-weight: 700;
+  box-shadow: 0 4px 12px rgba(41, 37, 36, 0.08);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.canvas-floating-btn:hover {
-  background: #fffbeb;
+.canvas-corner-theme-btn:hover {
+  background: #ffffff;
   border-color: #f59e0b;
   color: #b45309;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.18);
+}
+
+[data-theme="dark"] .canvas-corner-theme-btn {
+  background: rgba(30, 27, 24, 0.92);
+  border-color: #44403c;
+  color: #f5f5f4;
 }
 
 .btn-clean-dots-full {
@@ -1481,7 +1488,7 @@ button {
 .canvas-subject-layer img {
   display: block;
   max-width: 100%;
-  max-height: 500px;
+  max-height: min(520px, calc(100vh - 220px));
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1490,7 +1497,7 @@ button {
 .brush-canvas {
   display: block;
   max-width: 100%;
-  max-height: 500px;
+  max-height: min(520px, calc(100vh - 220px));
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1613,12 +1620,10 @@ button {
   pointer-events: auto;
 }
 
-/* ==========================================================================
-   Bottom Multi-Image Gallery Bar (Identik dengan yang di screenshot!)
-   ========================================================================== */
+/* Bottom Multi-Image Gallery Bar */
 .bottom-gallery-bar {
   position: fixed;
-  bottom: 24px;
+  bottom: 12px;
   left: 0;
   right: 0;
   display: flex;
@@ -1631,27 +1636,29 @@ button {
   pointer-events: auto;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-float);
-  padding: 8px 12px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 24px -4px rgba(41, 37, 36, 0.14);
+  padding: 6px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   max-width: 90vw;
   overflow-x: auto;
 }
 
 .gallery-add-btn {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
   border: 1.5px dashed var(--border-color);
   background: var(--bg-app);
   color: var(--text-muted);
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all var(--transition-fast);
 }
 .gallery-add-btn:hover {
   border-color: var(--brand-blue);
@@ -1668,9 +1675,9 @@ button {
 
 .thumb-item {
   position: relative;
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid transparent;
   cursor: pointer;
