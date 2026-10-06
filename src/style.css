@@ -1013,6 +1013,51 @@ button {
   box-shadow: 0 6px 16px rgba(22, 163, 74, 0.45);
 }
 
+.sticker-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn-cta-whatsapp-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #25d366;
+  color: white;
+  padding: 12px 18px;
+  border-radius: var(--radius-xl);
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  width: 100%;
+}
+.btn-cta-whatsapp-open:hover {
+  background: #20ba59;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+}
+
+.wa-auto-save-tip {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-lg);
+  padding: 10px 12px;
+  font-size: 0.74rem;
+  color: #166534;
+  line-height: 1.4;
+}
+.wa-auto-save-tip .tip-badge {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #15803d;
+}
+
 .sticker-badge-text {
   color: var(--text-main);
   font-weight: 700;

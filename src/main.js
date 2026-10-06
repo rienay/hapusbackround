@@ -110,6 +110,7 @@ const els = {
   stickerStrokeRange: document.getElementById('sticker-stroke-range'),
   stickerStrokeVal: document.getElementById('sticker-stroke-val'),
   swatchesStickerColor: document.querySelectorAll('[data-sticker-color]'),
+  btnOpenInWhatsApp: document.getElementById('btn-open-in-whatsapp'),
   btnQuickDlSticker: document.getElementById('btn-quick-dl-sticker'),
 
   // Popover Panels: Adjust
@@ -1057,6 +1058,66 @@ async function triggerStickerDownload() {
   showToast('Stiker WhatsApp (.webp 512×512) berhasil diunduh!');
 }
 
+async function openInWhatsApp() {
+  const item = getActiveItem();
+  if (!item) return;
+
+  showToast('Menyiapkan stiker WhatsApp...');
+
+  // 1. Render official 512x512 WebP Sticker with die-cut outline
+  const stickerBlob = await renderWhatsAppSticker();
+  if (!stickerBlob) return;
+
+  // 2. Also prepare PNG blob for clipboard
+  let pngBlob = null;
+  try {
+    pngBlob = await renderExport('png');
+  } catch (err) {}
+
+  // 3. Try Mobile / Web Share API with WebP File (Official WhatsApp mobile share)
+  const stickerFile = new File([stickerBlob], `pudding_stiker_${Date.now()}.webp`, { type: 'image/webp' });
+
+  if (navigator.canShare && navigator.canShare({ files: [stickerFile] })) {
+    try {
+      await navigator.share({
+        files: [stickerFile],
+        title: 'Stiker WhatsApp',
+        text: 'Stiker dibuat otomatis dengan Pudding.bg'
+      });
+      confetti({ particleCount: 70, spread: 65, origin: { y: 0.8 }, colors: ['#22c55e', '#16a34a', '#86efac'] });
+      showToast('Stiker dikirim ke WhatsApp! Ketuk stiker di chat lalu pilih "Tambah ke Favorit".');
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') return; // User cancelled share sheet
+    }
+  }
+
+  // 4. Desktop / WhatsApp Web Workflow:
+  // Automatically copy sticker PNG image to clipboard for direct Ctrl+V paste into WhatsApp Web
+  let copiedToClipboard = false;
+  if (pngBlob && navigator.clipboard && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': pngBlob })
+      ]);
+      copiedToClipboard = true;
+    } catch (err) {
+      console.warn('Clipboard write fallback:', err);
+    }
+  }
+
+  // 5. Open WhatsApp Web in new tab
+  window.open('https://web.whatsapp.com', '_blank');
+
+  confetti({ particleCount: 60, spread: 60, origin: { y: 0.8 }, colors: ['#22c55e', '#16a34a', '#86efac'] });
+
+  if (copiedToClipboard) {
+    showToast('WhatsApp dibuka! Stiker sudah otomatis disalin (Tinggal Ctrl+V di chat WA, lalu klik stiker & Tambah ke Favorit).');
+  } else {
+    showToast('WhatsApp dibuka! Silakan kirim stiker ke chat lalu pilih Tambah ke Favorit.');
+  }
+}
+
 /* ==========================================================================
    Wire Up All Events
    ========================================================================== */
@@ -1168,7 +1229,8 @@ function initEvents() {
   els.menuItems.forEach(item => {
     item.addEventListener('click', () => {
       const action = item.getAttribute('data-action');
-      if (action === 'dl-sticker') triggerStickerDownload();
+      if (action === 'open-whatsapp') openInWhatsApp();
+      else if (action === 'dl-sticker') triggerStickerDownload();
       else if (action === 'dl-png') triggerDownload('png');
       else if (action === 'dl-jpg') triggerDownload('jpeg');
       else if (action === 'copy') triggerCopyClipboard();
@@ -1348,7 +1410,8 @@ function initEvents() {
     });
   });
 
-  els.btnQuickDlSticker.addEventListener('click', triggerStickerDownload);
+  if (els.btnOpenInWhatsApp) els.btnOpenInWhatsApp.addEventListener('click', openInWhatsApp);
+  if (els.btnQuickDlSticker) els.btnQuickDlSticker.addEventListener('click', triggerStickerDownload);
 
   // Adjustments (Brightness & Contrast)
   els.adjBrightness.addEventListener('input', (e) => {

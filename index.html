@@ -186,11 +186,18 @@
 
                 <!-- Dropdown Menu -->
                 <div class="download-menu hidden" id="download-dropdown-menu">
-                  <button type="button" class="menu-item menu-item-whatsapp" data-action="dl-sticker">
+                  <button type="button" class="menu-item menu-item-whatsapp" data-action="open-whatsapp">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/></svg>
                     <div>
-                      <div class="menu-item-title" style="color: #16a34a;">Stiker WhatsApp (.webp)</div>
-                      <div class="menu-item-desc">Resmi 512×512px WebP siap pakai</div>
+                      <div class="menu-item-title" style="color: #16a34a;">Buka di WhatsApp (Kirim & Simpan)</div>
+                      <div class="menu-item-desc">Langsung buka WA & simpan stiker ke favorit</div>
+                    </div>
+                  </button>
+                  <button type="button" class="menu-item" data-action="dl-sticker">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <div>
+                      <div class="menu-item-title">Unduh File Stiker (.webp)</div>
+                      <div class="menu-item-desc">Format resmi 512×512px WebP</div>
                     </div>
                   </button>
                   <button type="button" class="menu-item" data-action="dl-png">
@@ -458,10 +465,22 @@
                   <button type="button" class="swatch-btn" data-sticker-color="#fbcfe8" style="background: #fbcfe8;" title="Pink"></button>
                 </div>
 
-                <button type="button" class="btn-cta-sticker btn-block" id="btn-quick-dl-sticker">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                  <span>Unduh Stiker WA (.webp 512px)</span>
-                </button>
+                <div class="sticker-actions-stack">
+                  <button type="button" class="btn-cta-whatsapp-open" id="btn-open-in-whatsapp">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/></svg>
+                    <span>Buka di WhatsApp (Kirim & Simpan)</span>
+                  </button>
+
+                  <div class="wa-auto-save-tip">
+                    <div class="tip-badge">💡 Cara Otomatis Tersimpan:</div>
+                    <p>Setelah terbuka di WhatsApp, kirim ke chat lalu <strong>klik/tap stikernya</strong> dan pilih <strong>"Tambah ke Favorit"</strong>. Stiker otomatis tersimpan permanen di WhatsApp Anda!</p>
+                  </div>
+
+                  <button type="button" class="btn-subtle-full" id="btn-quick-dl-sticker">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Unduh File Stiker (.webp)</span>
+                  </button>
+                </div>
               </div>
 
               <!-- PANEL 5: SESUAIKAN -->
