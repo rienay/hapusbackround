@@ -1,5 +1,4 @@
 import './style.css';
-import { removeBackground } from '@imgly/background-removal';
 import confetti from 'canvas-confetti';
 
 /* ==========================================================================
@@ -69,12 +68,7 @@ const els = {
   toolCardContents: document.querySelectorAll('.tool-card-content'),
   btnCloseSideCard: document.getElementById('btn-close-side-card'),
 
-  // Cutout Tools (5 Methods)
-  btnRunAiBg: document.getElementById('btn-run-ai-bg'),
-  btnRunAiText: document.getElementById('btn-run-ai-text'),
-  aiProgressMini: document.getElementById('ai-progress-mini'),
-  aiProgressMiniBar: document.getElementById('ai-progress-mini-bar'),
-
+  // Cutout Tools
   toolSelectBtns: document.querySelectorAll('.tool-select-btn'),
   subControlsColorWand: document.getElementById('sub-controls-color-wand'),
   subControlsBrush: document.getElementById('sub-controls-brush'),
@@ -252,9 +246,9 @@ async function processFiles(files) {
     showScreen('studio');
     renderGalleryTray();
     loadActiveItemIntoStudio();
-    // Open cutout panel directly so user immediately has the 5 methods
+    // Open cutout panel directly so user immediately has precision cutout tools
     openToolPanel('panel-cutout');
-    showToast('✨ Foto siap! Pilih salah satu dari 5 cara hapus background.');
+    showToast('✨ Foto siap! Pilih alat potong presisi untuk hapus background.');
   }
 }
 
@@ -516,77 +510,7 @@ function getCanvasVisualBrushSize() {
 }
 
 /* ==========================================================================
-   CARA 1: Hapus Otomatis (AI Pintar)
-   ========================================================================== */
-async function runAiBackgroundRemoval() {
-  const item = getActiveItem();
-  if (!item) return;
-
-  const btn = els.btnRunAiBg;
-  const btnText = els.btnRunAiText;
-  const progressMini = els.aiProgressMini;
-  const progressBar = els.aiProgressMiniBar;
-
-  btn.disabled = true;
-  btnText.textContent = 'Memproses AI...';
-  progressMini.classList.remove('hidden');
-  progressBar.style.width = '20%';
-
-  try {
-    const config = {
-      progress: (key, current, total) => {
-        let percent = 20;
-        if (total && total > 0) percent = Math.min(95, Math.round(20 + (current / total) * 75));
-        progressBar.style.width = `${percent}%`;
-      },
-      output: { format: 'image/png', quality: 0.95 }
-    };
-
-    const blob = await removeBackground(item.originalUrl, config);
-    progressBar.style.width = '100%';
-
-    // Load AI result into Image
-    const aiImg = new Image();
-    const aiUrl = URL.createObjectURL(blob);
-    await new Promise((res, rej) => {
-      aiImg.onload = res;
-      aiImg.onerror = rej;
-      aiImg.src = aiUrl;
-    });
-
-    // Draw onto workingCanvas (scaling to item width/height)
-    const workCtx = item.workingCanvas.getContext('2d');
-    workCtx.clearRect(0, 0, item.width, item.height);
-    workCtx.drawImage(aiImg, 0, 0, item.width, item.height);
-    URL.revokeObjectURL(aiUrl);
-
-    // Update interactive brushCanvas
-    const dispCtx = els.brushCanvas.getContext('2d');
-    dispCtx.clearRect(0, 0, item.width, item.height);
-    dispCtx.drawImage(item.workingCanvas, 0, 0);
-
-    // Push snapshot
-    item.history.push(workCtx.getImageData(0, 0, item.width, item.height));
-    item.redoStack = [];
-
-    updateActiveThumb();
-    showToast('🎉 Background berhasil dihapus otomatis oleh AI!');
-    confetti({ particleCount: 35, spread: 60, origin: { y: 0.55 } });
-  } catch (err) {
-    console.error('AI removal error:', err);
-    showToast('⚠️ AI kesulitan memotong gambar ini. Gunakan Tembak Warna untuk hasil lebih presisi!');
-  } finally {
-    btn.disabled = false;
-    btnText.textContent = 'Jalankan Hapus Otomatis (AI)';
-    setTimeout(() => {
-      progressMini.classList.add('hidden');
-      progressBar.style.width = '0%';
-    }, 600);
-  }
-}
-
-/* ==========================================================================
-   CARA 2: Tembak Warna (Color Wand / 1-Klik Titik)
+   ALAT 1: Tembak Warna (Color Wand / 1-Klik Titik)
    ========================================================================== */
 function shootColor(ix, iy) {
   const item = getActiveItem();
@@ -1284,10 +1208,7 @@ function setupEventListeners() {
     }
   });
 
-  // 4. CARA 1: AI Button
-  els.btnRunAiBg.addEventListener('click', runAiBackgroundRemoval);
-
-  // 5. CARA 2 - 5: Mode Buttons
+  // Cutout Mode Selector Buttons (Tembak Warna, Kuas Hapus, Pulihkan, Kotak Seleksi)
   els.toolSelectBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.getAttribute('data-mode');
