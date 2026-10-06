@@ -27,6 +27,8 @@ const appState = {
   lastPaintPos: null,
 
   theme: 'light',
+  checkerboardTheme: localStorage.getItem('pudding_checker_theme') || 'light', // 'light' | 'dark'
+  autoDespeckle: true,
 };
 
 /* ==========================================================================
@@ -154,6 +156,22 @@ const els = {
   linkReopenQris: document.getElementById('link-reopen-qris'),
   btnConfirmPaid: document.getElementById('btn-confirm-paid'),
   btnCancelPay: document.getElementById('btn-cancel-pay'),
+
+  // Canvas Floating Quick Controls
+  canvasFloatingControls: document.getElementById('canvas-floating-controls'),
+  btnToggleChecker: document.getElementById('btn-toggle-checker'),
+  checkerBtnIcon: document.getElementById('checker-btn-icon'),
+  checkerBtnLabel: document.getElementById('checker-btn-label'),
+  btnCleanDotsFloating: document.getElementById('btn-clean-dots-floating'),
+
+  // Cutout Despeckle Controls
+  checkAutoDespeckle: document.getElementById('check-auto-despeckle'),
+  btnCleanDotsPanel: document.getElementById('btn-clean-dots-panel'),
+
+  // Background Panel Transparent Options
+  stripTransparent: document.getElementById('strip-transparent'),
+  btnCheckerSegmentLight: document.getElementById('btn-checker-segment-light'),
+  btnCheckerSegmentDark: document.getElementById('btn-checker-segment-dark'),
 };
 
 /* ==========================================================================
@@ -394,6 +412,9 @@ function syncBackgroundUI(item) {
   els.stripGradient.classList.toggle('hidden', item.bgMode !== 'gradient');
   els.stripBlur.classList.toggle('hidden', item.bgMode !== 'blur');
   els.stripCustomImg.classList.toggle('hidden', item.bgMode !== 'custom-img');
+  if (els.stripTransparent) {
+    els.stripTransparent.classList.toggle('hidden', item.bgMode !== 'transparent');
+  }
 
   els.bgBlurSlider.value = item.blurAmount;
   els.bgBlurVal.textContent = `${item.blurAmount}px`;
@@ -522,7 +543,149 @@ function getCanvasVisualBrushSize() {
 }
 
 /* ==========================================================================
-   ALAT 1: Tembak Warna (Color Wand / 1-Klik Titik)
+   Checkerboard Theme & Stray Artifacts Cleaning
+   ========================================================================== */
+function setCheckerboardTheme(theme) {
+  appState.checkerboardTheme = theme;
+  localStorage.setItem('pudding_checker_theme', theme);
+
+  const isDark = (theme === 'dark');
+  if (els.canvasCheckerboard) els.canvasCheckerboard.classList.toggle('theme-dark', isDark);
+  if (els.canvasCard) els.canvasCard.classList.toggle('theme-dark', isDark);
+
+  if (els.checkerBtnIcon) els.checkerBtnIcon.textContent = isDark ? '⚫' : '⚪';
+  if (els.checkerBtnLabel) els.checkerBtnLabel.textContent = isDark ? 'Latar: Hitam' : 'Latar: Putih';
+
+  if (els.btnCheckerSegmentLight) els.btnCheckerSegmentLight.classList.toggle('active', !isDark);
+  if (els.btnCheckerSegmentDark) els.btnCheckerSegmentDark.classList.toggle('active', isDark);
+}
+
+function cleanStrayArtifacts(canvas, options = {}) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const w = canvas.width;
+  const h = canvas.height;
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  const thresholdAlpha = options.thresholdAlpha !== undefined ? options.thresholdAlpha : 25;
+  let cleanedCount = 0;
+
+  // Pass 1: Remove isolated noise specks (pixels with 6+ transparent 8-neighbors)
+  const toClear = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      if (data[idx + 3] <= thresholdAlpha) continue;
+
+      let transparentNeighbors = 0;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
+            transparentNeighbors++;
+            continue;
+          }
+          const nIdx = (ny * w + nx) * 4;
+          if (data[nIdx + 3] <= thresholdAlpha) {
+            transparentNeighbors++;
+          }
+        }
+      }
+
+      if (transparentNeighbors >= 6) {
+        toClear.push(idx);
+      }
+    }
+  }
+
+  for (let i = 0; i < toClear.length; i++) {
+    data[toClear[i] + 3] = 0;
+    cleanedCount++;
+  }
+
+  // Pass 2: Remove small disconnected floating islands (clusters <= 24 pixels)
+  const visited = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const pos = y * w + x;
+      const idx = pos * 4;
+
+      if (visited[pos] || data[idx + 3] <= thresholdAlpha) continue;
+
+      const cluster = [x, y];
+      visited[pos] = 1;
+      let head = 0;
+
+      while (head < cluster.length && cluster.length <= 48) {
+        const cx = cluster[head++];
+        const cy = cluster[head++];
+
+        const neighbors = [
+          [cx + 1, cy],
+          [cx - 1, cy],
+          [cx, cy + 1],
+          [cx, cy - 1]
+        ];
+
+        for (let i = 0; i < 4; i++) {
+          const nx = neighbors[i][0];
+          const ny = neighbors[i][1];
+          if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+            const nPos = ny * w + nx;
+            if (!visited[nPos] && data[nPos * 4 + 3] > thresholdAlpha) {
+              visited[nPos] = 1;
+              cluster.push(nx, ny);
+            }
+          }
+        }
+      }
+
+      const pixelCount = cluster.length / 2;
+      // Clusters with <= 24 pixels floating in transparency are noise specks
+      if (pixelCount > 0 && pixelCount <= 24) {
+        for (let k = 0; k < cluster.length; k += 2) {
+          const cIdx = (cluster[k + 1] * w + cluster[k]) * 4;
+          data[cIdx + 3] = 0;
+          cleanedCount++;
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return cleanedCount;
+}
+
+function runCleanStrayArtifactsAction() {
+  const item = getActiveItem();
+  if (!item) return;
+
+  const canvas = els.brushCanvas;
+  const count = cleanStrayArtifacts(canvas, { thresholdAlpha: 30 });
+
+  // Sync to workingCanvas
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.clearRect(0, 0, item.width, item.height);
+  workCtx.drawImage(canvas, 0, 0);
+
+  // Push history
+  const ctx = canvas.getContext('2d');
+  item.history.push(ctx.getImageData(0, 0, item.width, item.height));
+  item.redoStack = [];
+
+  updateActiveThumb();
+  if (count > 0) {
+    showToast(`🧹 Berhasil membersihkan ${count.toLocaleString()} titik & bercak sisa!`);
+  } else {
+    showToast('✨ Foto sudah bersih, tidak ada titik sisa yang terdeteksi.');
+  }
+}
+
+/* ==========================================================================
+   ALAT 1: Tembak Warna (Color Wand / 1-Klik Titik Presisi & Halus)
    ========================================================================== */
 function shootColor(ix, iy) {
   const item = getActiveItem();
@@ -549,18 +712,21 @@ function shootColor(ix, iy) {
     return;
   }
 
-  // Tolerance Euclidean distance threshold
-  const maxDist = (appState.colorTolerance / 100) * 441.67;
-
-  function isMatch(r, g, b, a) {
-    if (a === 0) return false;
+  // Perceptual Redmean Color Distance
+  function calcColorDist(r, g, b) {
+    const rmean = (r + targetR) / 2;
     const dr = r - targetR;
     const dg = g - targetG;
     const db = b - targetB;
-    return Math.sqrt(dr * dr + dg * dg + db * db) <= maxDist;
+    return Math.sqrt((((512 + rmean) * dr * dr) >> 8) + 4 * dg * dg + (((767 - rmean) * db * db) >> 8));
   }
 
+  // Tolerance thresholds
+  const maxDist = (appState.colorTolerance / 100) * 380;
+  const featherDist = maxDist * 1.25; // Soft anti-alias edge falloff zone
+
   let erasedCount = 0;
+  const isWhiteBg = (targetR > 215 && targetG > 215 && targetB > 215);
 
   if (appState.isContiguousColor) {
     // Smart Contiguous Flood Fill (BFS)
@@ -594,37 +760,67 @@ function shootColor(ix, iy) {
           if (!visited[nPos]) {
             visited[nPos] = 1;
             const nIdx = nPos * 4;
-            if (isMatch(data[nIdx], data[nIdx + 1], data[nIdx + 2], data[nIdx + 3])) {
-              queue.push(nx, ny);
+            const r = data[nIdx];
+            const g = data[nIdx + 1];
+            const b = data[nIdx + 2];
+            const a = data[nIdx + 3];
+
+            if (a > 0) {
+              const dist = calcColorDist(r, g, b);
+              if (dist <= maxDist) {
+                queue.push(nx, ny);
+              } else if (dist <= featherDist) {
+                // Soft edge transition to prevent harsh white halos
+                const factor = (dist - maxDist) / (featherDist - maxDist);
+                data[nIdx + 3] = Math.min(data[nIdx + 3], Math.round(255 * factor));
+                if (isWhiteBg) {
+                  // Suppress white halo bleed on perimeter
+                  data[nIdx] = Math.round(data[nIdx] * factor);
+                  data[nIdx + 1] = Math.round(data[nIdx + 1] * factor);
+                  data[nIdx + 2] = Math.round(data[nIdx + 2] * factor);
+                }
+              }
             }
           }
         }
       }
     }
   } else {
-    // Global Color Erase: Erase all matching pixels in whole image
+    // Global Color Erase: Erase all matching pixels across whole image
     const totalPixels = w * h;
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
-      if (isMatch(data[idx], data[idx + 1], data[idx + 2], data[idx + 3])) {
-        data[idx + 3] = 0;
-        erasedCount++;
+      if (data[idx + 3] > 0) {
+        const dist = calcColorDist(data[idx], data[idx + 1], data[idx + 2]);
+        if (dist <= maxDist) {
+          data[idx + 3] = 0;
+          erasedCount++;
+        } else if (dist <= featherDist) {
+          const factor = (dist - maxDist) / (featherDist - maxDist);
+          data[idx + 3] = Math.min(data[idx + 3], Math.round(255 * factor));
+        }
       }
     }
   }
 
   ctx.putImageData(imgData, 0, 0);
 
+  // Auto despeckle / clean stray dots if enabled
+  if (appState.autoDespeckle) {
+    cleanStrayArtifacts(canvas, { thresholdAlpha: 20 });
+  }
+
   // Sync to workingCanvas
   const workCtx = item.workingCanvas.getContext('2d');
-  workCtx.putImageData(imgData, 0, 0);
+  workCtx.clearRect(0, 0, w, h);
+  workCtx.drawImage(canvas, 0, 0);
 
   // Push history
   item.history.push(ctx.getImageData(0, 0, w, h));
   item.redoStack = [];
 
   updateActiveThumb();
-  showToast(`🎯 Warna berhasil ditembak & dihapus! (${erasedCount.toLocaleString()} px)`);
+  showToast(`🎯 Latar berhasil dihapus bersih! (${erasedCount.toLocaleString()} px)`);
 }
 
 /* ==========================================================================
@@ -1716,6 +1912,37 @@ function setupEventListeners() {
   }
 
   checkUrlPaymentCallback();
+
+  // 12. Checkerboard Theme & Despeckle Listeners
+  if (els.btnToggleChecker) {
+    els.btnToggleChecker.addEventListener('click', () => {
+      const nextTheme = appState.checkerboardTheme === 'light' ? 'dark' : 'light';
+      setCheckerboardTheme(nextTheme);
+    });
+  }
+
+  if (els.btnCheckerSegmentLight) {
+    els.btnCheckerSegmentLight.addEventListener('click', () => setCheckerboardTheme('light'));
+  }
+  if (els.btnCheckerSegmentDark) {
+    els.btnCheckerSegmentDark.addEventListener('click', () => setCheckerboardTheme('dark'));
+  }
+
+  if (els.btnCleanDotsFloating) {
+    els.btnCleanDotsFloating.addEventListener('click', runCleanStrayArtifactsAction);
+  }
+  if (els.btnCleanDotsPanel) {
+    els.btnCleanDotsPanel.addEventListener('click', runCleanStrayArtifactsAction);
+  }
+
+  if (els.checkAutoDespeckle) {
+    els.checkAutoDespeckle.addEventListener('change', (e) => {
+      appState.autoDespeckle = e.target.checked;
+    });
+  }
+
+  // Initialize Checkerboard theme
+  setCheckerboardTheme(appState.checkerboardTheme);
 
   // Setup interactive handlers
   setupCanvasInteractions();

@@ -1354,6 +1354,102 @@ button {
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   z-index: 1;
+  transition: background-color 0.25s ease;
+}
+
+/* Dark Checkerboard (Kotak Hitam untuk kontras objek putih & periksa sisa bercak) */
+.canvas-checkerboard.theme-dark {
+  background-color: #121214;
+  background-image: 
+    linear-gradient(45deg, #27272a 25%, transparent 25%), 
+    linear-gradient(-45deg, #27272a 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #27272a 75%), 
+    linear-gradient(-45deg, transparent 75%, #27272a 75%);
+}
+
+.canvas-card.theme-dark {
+  background-color: #121214;
+}
+
+/* Floating Quick Controls at bottom of Canvas */
+.canvas-floating-controls {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 25;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-color);
+  box-shadow: 0 10px 25px -4px rgba(41, 37, 36, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.canvas-floating-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.canvas-floating-btn:hover {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #b45309;
+  transform: translateY(-1px);
+}
+
+.btn-clean-dots-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1.5px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+  transition: all var(--transition-fast);
+}
+
+.btn-clean-dots-full:hover {
+  background: #f59e0b;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Dark mode overrides for canvas floating controls */
+[data-theme="dark"] .canvas-floating-controls {
+  background: rgba(30, 27, 24, 0.94);
+  border-color: #44403c;
+}
+
+[data-theme="dark"] .canvas-floating-btn {
+  background: #292524;
+  color: #f5f5f4;
+  border-color: #44403c;
+}
+[data-theme="dark"] .canvas-floating-btn:hover {
+  background: #44403c;
+  color: #fef08a;
 }
 
 .canvas-custom-bg {

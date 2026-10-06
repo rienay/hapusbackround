@@ -285,6 +285,17 @@
                 <!-- Dynamic Brush Cursor Preview -->
                 <div id="brush-cursor-indicator" class="brush-cursor-indicator hidden"></div>
               </div>
+
+              <!-- Quick Canvas Floating Controls -->
+              <div class="canvas-floating-controls" id="canvas-floating-controls">
+                <button type="button" class="canvas-floating-btn" id="btn-toggle-checker" title="Ganti latar transparan (Putih / Hitam)">
+                  <span id="checker-btn-icon">🏁</span>
+                  <span id="checker-btn-label">Latar: Putih</span>
+                </button>
+                <button type="button" class="canvas-floating-btn" id="btn-clean-dots-floating" title="Sapu bersih titik-titik sisa dan bercak putih">
+                  <span>🧹 Bersihkan Titik Sisa</span>
+                </button>
+              </div>
             </div>
 
             <!-- Side Card -->
@@ -354,6 +365,16 @@
                       <div class="toggle-sub">Hanya warna yang menyambung (tidak merusak objek)</div>
                     </div>
                   </div>
+                  <div class="side-card-toggle-row mt-8">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="check-auto-despeckle" checked />
+                      <span class="slider round"></span>
+                    </label>
+                    <div>
+                      <div class="toggle-title">Anti-Bercak & Tepi Halus</div>
+                      <div class="toggle-sub">Otomatis lenyapkan titik-titik sisa & haluskan tepi</div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Controls for Mode: Pulih Otomatis (1-Klik Sudut / Titik) -->
@@ -406,7 +427,10 @@
                 </div>
 
                 <!-- Bottom Actions -->
-                <div class="side-card-actions mt-16">
+                <div class="side-card-actions mt-16" style="display: flex; flex-direction: column; gap: 8px;">
+                  <button type="button" class="btn-clean-dots-full" id="btn-clean-dots-panel">
+                    <span>🧹 Bersihkan Titik & Bercak Sisa</span>
+                  </button>
                   <button type="button" class="btn-subtle-full" id="btn-reset-cutout">
                     <span>↺ Reset ke Foto Asli Awal</span>
                   </button>
@@ -422,6 +446,22 @@
                   <button type="button" class="bg-tab-pill" data-bg-mode="color">Warna</button>
                   <button type="button" class="bg-tab-pill" data-bg-mode="gradient">Gradien</button>
                   <button type="button" class="bg-tab-pill" data-bg-mode="custom-img">Foto</button>
+                </div>
+
+                <!-- Opsi Kotak Transparan (Putih vs Hitam) -->
+                <div class="bg-sub-strip" id="strip-transparent">
+                  <div class="field-header mb-6">
+                    <span>Warna Kotak Transparan:</span>
+                  </div>
+                  <div class="segmented-control" id="checker-theme-segmented">
+                    <button type="button" class="segment-btn active" data-theme="light" id="btn-checker-segment-light">
+                      ⚪ Kotak Putih
+                    </button>
+                    <button type="button" class="segment-btn" data-theme="dark" id="btn-checker-segment-dark">
+                      ⚫ Kotak Hitam
+                    </button>
+                  </div>
+                  <div class="field-hint-text mt-8">💡 Gunakan <strong>Kotak Hitam</strong> untuk melihat objek putih, garis stiker, atau sisa bercak putih dengan sangat jelas.</div>
                 </div>
 
                 <div class="bg-sub-strip hidden" id="strip-color">
