@@ -225,12 +225,12 @@ button {
 }
 
 .screen-view {
-  display: none;
+  display: none !important;
   width: 100%;
   flex: 1;
 }
 .screen-view.active {
-  display: flex;
+  display: flex !important;
   flex-direction: column;
 }
 
@@ -435,8 +435,6 @@ button {
    ========================================================================== */
 #studio-screen {
   position: relative;
-  display: flex;
-  flex-direction: column;
   padding-bottom: 96px; /* Space for bottom gallery tray */
 }
 
