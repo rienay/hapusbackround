@@ -92,6 +92,14 @@ const els = {
   shadowOffsetRange: document.getElementById('shadow-offset-range'),
   checkOutline: document.getElementById('check-outline'),
 
+  // Popover Panels: Stiker WhatsApp
+  btnToolSticker: document.getElementById('btn-tool-sticker'),
+  checkStickerMode: document.getElementById('check-sticker-mode'),
+  stickerStrokeRange: document.getElementById('sticker-stroke-range'),
+  stickerStrokeVal: document.getElementById('sticker-stroke-val'),
+  swatchesStickerColor: document.querySelectorAll('[data-sticker-color]'),
+  btnQuickDlSticker: document.getElementById('btn-quick-dl-sticker'),
+
   // Popover Panels: Adjust
   adjBrightness: document.getElementById('adj-brightness'),
   adjContrast: document.getElementById('adj-contrast'),
@@ -207,6 +215,9 @@ async function processFiles(files) {
         shadowBlur: 20,
         shadowOffset: 15,
         outlineOn: false,
+        stickerMode: false,
+        stickerStroke: 12,
+        stickerColor: '#ffffff',
         brightness: 100,
         contrast: 100,
         history: [],
@@ -281,9 +292,10 @@ function loadActiveItemIntoStudio() {
   els.canvasOriginalImg.src = item.originalUrl;
   els.canvasBlurLayer.src = item.originalUrl;
 
-  // Sync background UI controls
+  // Sync UI controls
   syncBackgroundUI(item);
   syncEffectsUI(item);
+  syncStickerUI(item);
   syncAdjustUI(item);
 
   // Apply visuals
@@ -318,14 +330,33 @@ function applyStudioVisuals(item) {
     els.canvasCheckerboard.classList.add('hidden');
   }
 
-  // 2. Cutout Filters (Shadow, Outline, Brightness, Contrast)
+  // 2. Cutout Filters (Shadow, Outline, Sticker, Brightness, Contrast)
   let filterParts = [];
-  if (item.shadowOn) {
-    filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
+  
+  if (item.stickerMode) {
+    const s = item.stickerStroke || 12;
+    const col = item.stickerColor || '#ffffff';
+    const diag = Math.round(s * 0.707);
+    filterParts.push(
+      `drop-shadow(${s}px 0 0 ${col}) ` +
+      `drop-shadow(-${s}px 0 0 ${col}) ` +
+      `drop-shadow(0 ${s}px 0 ${col}) ` +
+      `drop-shadow(0 -${s}px 0 ${col}) ` +
+      `drop-shadow(${diag}px ${diag}px 0 ${col}) ` +
+      `drop-shadow(-${diag}px ${diag}px 0 ${col}) ` +
+      `drop-shadow(${diag}px -${diag}px 0 ${col}) ` +
+      `drop-shadow(-${diag}px -${diag}px 0 ${col}) ` +
+      `drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35))`
+    );
+  } else {
+    if (item.shadowOn) {
+      filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
+    }
+    if (item.outlineOn) {
+      filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
+    }
   }
-  if (item.outlineOn) {
-    filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
-  }
+
   if (item.brightness !== 100) {
     filterParts.push(`brightness(${item.brightness}%)`);
   }
@@ -334,6 +365,16 @@ function applyStudioVisuals(item) {
   }
 
   els.canvasCutoutImg.style.filter = filterParts.join(' ');
+}
+
+function syncStickerUI(item) {
+  if (!els.checkStickerMode) return;
+  els.checkStickerMode.checked = item.stickerMode;
+  els.stickerStrokeRange.value = item.stickerStroke;
+  els.stickerStrokeVal.textContent = `${item.stickerStroke}px`;
+  els.swatchesStickerColor.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-sticker-color') === item.stickerColor);
+  });
 }
 
 /* ==========================================================================
@@ -359,6 +400,17 @@ function toggleToolPanel(panelId) {
   els.popoverContents.forEach(p => {
     p.classList.toggle('hidden', p.id !== panelId);
   });
+
+  // Automatically enable sticker mode when opening sticker panel
+  if (panelId === 'panel-sticker') {
+    const item = getActiveItem();
+    if (item && !item.stickerMode) {
+      item.stickerMode = true;
+      syncStickerUI(item);
+      applyStudioVisuals(item);
+      showToast('Garis tepi stiker WhatsApp aktif');
+    }
+  }
 
   // Enable brush overlay only when in cutout mode
   if (panelId === 'panel-cutout') {
@@ -663,6 +715,97 @@ async function triggerCopyClipboard() {
 }
 
 /* ==========================================================================
+   WhatsApp Sticker Renderer (512x512 WebP Official Standard)
+   ========================================================================== */
+async function renderWhatsAppSticker() {
+  const item = getActiveItem();
+  if (!item) return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 512, 512);
+
+  // Standard WhatsApp sticker specs: 512x512 with 16px safety margins (max 480x480)
+  const maxDim = 480;
+  const scale = Math.min(maxDim / item.width, maxDim / item.height);
+  const dw = Math.round(item.width * scale);
+  const dh = Math.round(item.height * scale);
+  const dx = Math.round((512 - dw) / 2);
+  const dy = Math.round((512 - dh) / 2);
+
+  const strokeSize = item.stickerStroke || 12;
+  const strokeColor = item.stickerColor || '#ffffff';
+
+  // Scaled offscreen cutout
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = dw;
+  offCanvas.height = dh;
+  const octx = offCanvas.getContext('2d');
+  octx.drawImage(els.canvasCutoutImg, 0, 0, dw, dh);
+
+  // Mask silhouette for solid die-cut border
+  const maskCanvas = document.createElement('canvas');
+  maskCanvas.width = dw;
+  maskCanvas.height = dh;
+  const mctx = maskCanvas.getContext('2d');
+  mctx.drawImage(offCanvas, 0, 0);
+  mctx.globalCompositeOperation = 'source-in';
+  mctx.fillStyle = strokeColor;
+  mctx.fillRect(0, 0, dw, dh);
+
+  // 1. Draw soft drop-shadow behind sticker outline
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 6;
+
+  // Multi-angle thick stroke outline
+  const steps = 24;
+  for (let i = 0; i < steps; i++) {
+    const angle = (i * 2 * Math.PI) / steps;
+    const ox = Math.cos(angle) * strokeSize;
+    const oy = Math.sin(angle) * strokeSize;
+    ctx.drawImage(maskCanvas, dx + ox, dy + oy);
+  }
+  ctx.restore();
+
+  // Solid stroke interior filling
+  for (let r = 1; r < strokeSize; r += 2) {
+    for (let i = 0; i < 12; i++) {
+      const angle = (i * 2 * Math.PI) / 12;
+      ctx.drawImage(maskCanvas, dx + Math.cos(angle) * r, dy + Math.sin(angle) * r);
+    }
+  }
+
+  // 2. Draw cutout subject on top
+  ctx.drawImage(offCanvas, dx, dy);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.9);
+  });
+}
+
+async function triggerStickerDownload() {
+  const blob = await renderWhatsAppSticker();
+  if (!blob) return;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stiker-whatsapp-${Date.now()}.webp`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  confetti({ particleCount: 70, spread: 65, origin: { y: 0.8 }, colors: ['#22c55e', '#16a34a', '#86efac'] });
+  showToast('Stiker WhatsApp (.webp 512×512) berhasil diunduh!');
+}
+
+/* ==========================================================================
    Wire Up All Events
    ========================================================================== */
 function initEvents() {
@@ -773,7 +916,8 @@ function initEvents() {
   els.menuItems.forEach(item => {
     item.addEventListener('click', () => {
       const action = item.getAttribute('data-action');
-      if (action === 'dl-png') triggerDownload('png');
+      if (action === 'dl-sticker') triggerStickerDownload();
+      else if (action === 'dl-png') triggerDownload('png');
       else if (action === 'dl-jpg') triggerDownload('jpeg');
       else if (action === 'copy') triggerCopyClipboard();
       els.downloadDropdownMenu.classList.add('hidden');
@@ -887,6 +1031,34 @@ function initEvents() {
     item.outlineOn = e.target.checked;
     applyStudioVisuals(item);
   });
+
+  // WhatsApp Sticker Controls
+  els.checkStickerMode.addEventListener('change', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.stickerMode = e.target.checked;
+    applyStudioVisuals(item);
+  });
+
+  els.stickerStrokeRange.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.stickerStroke = parseInt(e.target.value, 10);
+    els.stickerStrokeVal.textContent = `${item.stickerStroke}px`;
+    applyStudioVisuals(item);
+  });
+
+  els.swatchesStickerColor.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = getActiveItem();
+      if (!item) return;
+      item.stickerColor = btn.getAttribute('data-sticker-color');
+      els.swatchesStickerColor.forEach(b => b.classList.toggle('active', b === btn));
+      applyStudioVisuals(item);
+    });
+  });
+
+  els.btnQuickDlSticker.addEventListener('click', triggerStickerDownload);
 
   // Adjustments (Brightness & Contrast)
   els.adjBrightness.addEventListener('input', (e) => {

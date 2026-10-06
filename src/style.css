@@ -761,6 +761,45 @@ button {
   accent-color: var(--brand-blue);
 }
 
+.btn-sticker-tab {
+  color: #16a34a !important;
+}
+.btn-sticker-tab svg {
+  stroke: #16a34a;
+}
+.btn-sticker-tab.active {
+  background: rgba(34, 197, 94, 0.12) !important;
+  color: #15803d !important;
+}
+
+.btn-cta-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #16a34a;
+  color: white;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  transition: all var(--transition-fast);
+}
+.btn-cta-sticker:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.45);
+}
+
+.sticker-badge-text {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.menu-item-whatsapp:hover {
+  background: rgba(34, 197, 94, 0.1) !important;
+}
+
 /* ==========================================================================
    Central Canvas Stage (Card focused di tengah)
    ========================================================================== */

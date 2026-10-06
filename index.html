@@ -137,7 +137,18 @@
                 <span>Efek</span>
               </button>
 
-              <!-- Tool 4: Sesuaikan (Brightness, Contrast, Blur) -->
+              <!-- Tool 4: Stiker WhatsApp -->
+              <button type="button" class="action-tab-btn btn-sticker-tab" data-panel="panel-sticker" id="btn-tool-sticker">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/>
+                  <circle cx="8.5" cy="11.5" r="1.5" fill="currentColor"/>
+                  <circle cx="15.5" cy="11.5" r="1.5" fill="currentColor"/>
+                  <path d="M9 15.5c1 1.5 5 1.5 6 0"/>
+                </svg>
+                <span>Stiker WA</span>
+              </button>
+
+              <!-- Tool 5: Sesuaikan (Brightness, Contrast) -->
               <button type="button" class="action-tab-btn" data-panel="panel-adjust" id="btn-tool-adjust">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
@@ -147,14 +158,14 @@
 
               <div class="action-bar-divider"></div>
 
-              <!-- Tool 5: Split Comparison Toggle -->
+              <!-- Tool 6: Split Comparison Toggle -->
               <button type="button" class="action-icon-btn" id="btn-toggle-compare" title="Bandingkan Sebelum / Sesudah">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/>
                 </svg>
               </button>
 
-              <!-- Tool 6: Undo & Redo -->
+              <!-- Tool 7: Undo & Redo -->
               <button type="button" class="action-icon-btn" id="btn-undo" title="Urungkan (Ctrl+Z)">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
@@ -166,7 +177,7 @@
                 </svg>
               </button>
 
-              <!-- Tool 7: Unduh (Download Button with Dropdown) -->
+              <!-- Tool 8: Unduh (Download Button with Dropdown) -->
               <div class="download-split-dropdown">
                 <button type="button" class="btn-download-primary" id="btn-main-download">
                   <span>Unduh</span>
@@ -179,6 +190,13 @@
 
                 <!-- Dropdown Menu -->
                 <div class="download-menu hidden" id="download-dropdown-menu">
+                  <button type="button" class="menu-item menu-item-whatsapp" data-action="dl-sticker">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/></svg>
+                    <div>
+                      <div class="menu-item-title" style="color: #16a34a;">Stiker WhatsApp (.webp)</div>
+                      <div class="menu-item-desc">Resmi 512×512px WebP siap pakai</div>
+                    </div>
+                  </button>
                   <button type="button" class="menu-item" data-action="dl-png">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                     <div>
@@ -307,6 +325,37 @@
                     <input type="checkbox" id="check-outline" />
                     <span>Garis Tepi (Stiker)</span>
                   </label>
+                </div>
+              </div>
+
+              <!-- Panel: Stiker WhatsApp -->
+              <div class="popover-content hidden" id="panel-sticker">
+                <div class="popover-row">
+                  <div class="sticker-toggle-wrap">
+                    <label class="toggle-pill-label">
+                      <input type="checkbox" id="check-sticker-mode" checked />
+                      <span class="sticker-badge-text">Garis Tepi Stiker (Die-Cut)</span>
+                    </label>
+                  </div>
+
+                  <div class="slider-inline-group">
+                    <label>Tebal Garis:</label>
+                    <input type="range" id="sticker-stroke-range" min="4" max="25" value="12" />
+                    <span id="sticker-stroke-val">12px</span>
+                  </div>
+
+                  <div class="swatches-flow">
+                    <button type="button" class="swatch-btn active" data-sticker-color="#ffffff" style="background: #ffffff;" title="Putih Klasik"></button>
+                    <button type="button" class="swatch-btn" data-sticker-color="#fef08a" style="background: #fef08a;" title="Kuning"></button>
+                    <button type="button" class="swatch-btn" data-sticker-color="#bbf7d0" style="background: #bbf7d0;" title="Hijau"></button>
+                    <button type="button" class="swatch-btn" data-sticker-color="#bae6fd" style="background: #bae6fd;" title="Biru"></button>
+                    <button type="button" class="swatch-btn" data-sticker-color="#fbcfe8" style="background: #fbcfe8;" title="Pink"></button>
+                  </div>
+
+                  <button type="button" class="btn-cta-sticker" id="btn-quick-dl-sticker">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Unduh Stiker WA (.webp 512px)</span>
+                  </button>
                 </div>
               </div>
 
