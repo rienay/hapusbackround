@@ -218,43 +218,135 @@
               </div>
             </div>
 
-            <!-- POPUP PANEL DRAWER (Muncul tepat di bawah toolbar saat diklik) -->
-            <div class="tool-popover-panel hidden" id="tool-popover">
-              <!-- Panel: Potongan (Kuas Hapus/Pulihkan) -->
-              <div class="popover-content hidden" id="panel-cutout">
-                <div class="popover-row">
-                  <div class="brush-mode-pills">
-                    <button type="button" class="pill-btn active" id="btn-brush-erase-mode">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>
-                      <span>Hapus</span>
-                    </button>
-                    <button type="button" class="pill-btn" id="btn-brush-restore-mode">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/></svg>
-                      <span>Pulihkan</span>
-                    </button>
-                  </div>
+          </div>
 
-                  <div class="slider-inline-group">
-                    <label>Ukuran Kuas:</label>
-                    <input type="range" id="brush-size-input" min="5" max="80" value="25" />
+          <!-- Studio Center Workspace with Side Drawer (Matching remove.bg Screenshots) -->
+          <div class="studio-workspace-container">
+            <!-- Central Canvas Stage -->
+            <div class="canvas-center-viewport">
+              <div class="canvas-card" id="main-canvas-card">
+                <!-- Custom Backdrop Layer -->
+                <div class="canvas-custom-bg" id="canvas-bg-layer"></div>
+
+                <!-- Blurred Original Background Layer -->
+                <img id="canvas-blur-layer" class="canvas-blur-layer hidden" src="" alt="Latar Asli Blur" />
+
+                <!-- Transparent Checkerboard Pattern -->
+                <div class="canvas-checkerboard" id="canvas-checkerboard"></div>
+
+                <!-- Cutout Foreground Subject Layer -->
+                <div class="canvas-subject-layer" id="canvas-subject-layer">
+                  <img id="canvas-cutout-img" src="" alt="Hasil Latar Belakang Terhapus" />
+                  <canvas id="brush-canvas" class="brush-canvas hidden"></canvas>
+                </div>
+
+                <!-- Original Overlay (For Split Comparison Slider) -->
+                <div class="canvas-compare-clip hidden" id="canvas-compare-clip">
+                  <img id="canvas-original-img" src="" alt="Foto Asli" />
+                  <span class="compare-badge badge-orig">Asli</span>
+                </div>
+                <span class="compare-badge badge-clean hidden" id="badge-clean">Terhapus</span>
+
+                <!-- Slider Split Divider Line -->
+                <div class="compare-slider-divider hidden" id="compare-slider-divider">
+                  <div class="compare-slider-handle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                </div>
+
+                <!-- Dynamic Brush Cursor Preview -->
+                <div id="brush-cursor-indicator" class="brush-cursor-indicator hidden"></div>
+              </div>
+            </div>
+
+            <!-- Side Card (Matching remove.bg Screenshots) -->
+            <aside class="tool-side-card hidden" id="tool-side-card">
+              <button type="button" class="side-card-close-btn" id="btn-close-side-card" title="Tutup Panel">&times;</button>
+
+              <!-- PANEL 1: POTONGAN (Kuas & Tembak Warna) -->
+              <div class="tool-card-content hidden" id="panel-cutout">
+                <div class="side-card-header-banner">
+                  <div class="banner-avatar">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14.5 4-2.5 5 4 2 2.5-5zM6 16l6-6M3 21l3-3M3 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                  </div>
+                  <div>
+                    <h4 class="banner-title">Kuas Ajaib</h4>
+                    <p class="banner-desc">Hapus, pulihkan, atau tembak warna dengan mudah</p>
+                  </div>
+                </div>
+
+                <!-- Three Big Mode Buttons -->
+                <div class="cutout-mode-grid">
+                  <button type="button" class="cutout-mode-box active" id="btn-brush-erase-mode">
+                    <div class="mode-icon-circle red">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    </div>
+                    <span>Hapus</span>
+                  </button>
+
+                  <button type="button" class="cutout-mode-box" id="btn-brush-restore-mode">
+                    <div class="mode-icon-circle blue">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    </div>
+                    <span>Pulihkan</span>
+                  </button>
+
+                  <button type="button" class="cutout-mode-box" id="btn-brush-color-wand-mode" title="Klik satu warna di gambar untuk langsung menghapus semua warna tersebut">
+                    <div class="mode-icon-circle purple">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m14 2 4 4-12 12-4-4z"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="1.5"/></svg>
+                    </div>
+                    <span>Tembak Warna</span>
+                  </button>
+                </div>
+
+                <!-- Brush Size Slider -->
+                <div class="side-card-field" id="brush-size-field">
+                  <div class="field-header">
+                    <span>Ukuran Kuas</span>
                     <span id="brush-size-display">25px</span>
                   </div>
+                  <input type="range" id="brush-size-input" min="5" max="90" value="25" />
+                </div>
 
-                  <button type="button" class="btn-text-subtle" id="btn-reset-cutout">Reset ke Awal</button>
+                <!-- Color Tolerance Slider (Only in Tembak Warna Mode) -->
+                <div class="side-card-field hidden" id="color-tolerance-field">
+                  <div class="field-header">
+                    <span>Kepekaan Warna (Toleransi)</span>
+                    <span id="color-tolerance-display">25%</span>
+                  </div>
+                  <input type="range" id="color-tolerance-input" min="5" max="60" value="25" />
+                  <div class="field-hint-text">Cukup klik pada warna yang ingin dihapus di gambar.</div>
+                </div>
+
+                <!-- Magic Brush Switch -->
+                <div class="side-card-toggle-row">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="check-magic-brush" checked />
+                    <span class="slider round"></span>
+                  </label>
+                  <div>
+                    <div class="toggle-title">Kuas Ajaib</div>
+                    <div class="toggle-sub">Otomatis mengikuti lekukan & garis tepi objek</div>
+                  </div>
+                </div>
+
+                <div class="side-card-actions">
+                  <button type="button" class="btn-subtle-full" id="btn-reset-cutout">Reset ke Awal</button>
                 </div>
               </div>
 
-              <!-- Panel: Latar Belakang -->
-              <div class="popover-content hidden" id="panel-background">
-                <div class="bg-selector-tabs">
+              <!-- PANEL 2: LATAR BELAKANG -->
+              <div class="tool-card-content hidden" id="panel-background">
+                <h4 class="side-card-title mb-12">Pilih Latar Belakang</h4>
+                <div class="bg-selector-tabs mb-12">
                   <button type="button" class="bg-tab-pill active" data-bg-mode="transparent">Transparan</button>
                   <button type="button" class="bg-tab-pill" data-bg-mode="blur">Blur Asli</button>
-                  <button type="button" class="bg-tab-pill" data-bg-mode="color">Warna Solid</button>
+                  <button type="button" class="bg-tab-pill" data-bg-mode="color">Warna</button>
                   <button type="button" class="bg-tab-pill" data-bg-mode="gradient">Gradien</button>
-                  <button type="button" class="bg-tab-pill" data-bg-mode="custom-img">Upload Foto</button>
+                  <button type="button" class="bg-tab-pill" data-bg-mode="custom-img">Foto</button>
                 </div>
 
-                <!-- Sub-items: Color Swatches -->
                 <div class="bg-sub-strip hidden" id="strip-color">
                   <div class="swatches-flow">
                     <button type="button" class="swatch-btn active" data-color="#ffffff" style="background: #ffffff;" title="Putih"></button>
@@ -272,7 +364,6 @@
                   </div>
                 </div>
 
-                <!-- Sub-items: Gradient Swatches -->
                 <div class="bg-sub-strip hidden" id="strip-gradient">
                   <div class="swatches-flow">
                     <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></button>
@@ -283,128 +374,110 @@
                   </div>
                 </div>
 
-                <!-- Sub-items: Blur Slider -->
                 <div class="bg-sub-strip hidden" id="strip-blur">
-                  <div class="slider-inline-group">
-                    <label>Tingkat Blur Latar Asli:</label>
+                  <div class="side-card-field">
+                    <div class="field-header">
+                      <span>Tingkat Blur Latar Asli</span>
+                      <span id="bg-blur-val">12px</span>
+                    </div>
                     <input type="range" id="bg-blur-slider" min="0" max="30" value="12" />
-                    <span id="bg-blur-val">12px</span>
                   </div>
                 </div>
 
-                <!-- Sub-items: Custom Image Upload -->
                 <div class="bg-sub-strip hidden" id="strip-custom-img">
                   <input type="file" id="custom-bg-input" accept="image/*" class="sr-only" />
-                  <button type="button" class="btn-subtle-sm" id="btn-pick-custom-bg">
+                  <button type="button" class="btn-subtle-full" id="btn-pick-custom-bg">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                     <span>Pilih Gambar Latar Belakang...</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Panel: Efek (Shadow & Outline) -->
-              <div class="popover-content hidden" id="panel-effects">
-                <div class="popover-row">
-                  <label class="toggle-pill-label">
+              <!-- PANEL 3: EFEK -->
+              <div class="tool-card-content hidden" id="panel-effects">
+                <h4 class="side-card-title mb-12">Efek Visual</h4>
+                <div class="side-card-toggle-row">
+                  <label class="toggle-switch">
                     <input type="checkbox" id="check-shadow" />
-                    <span>Drop Shadow (Bayangan)</span>
+                    <span class="slider round"></span>
                   </label>
-                  <div class="slider-inline-group" id="shadow-blur-group">
-                    <label>Kelembutan:</label>
-                    <input type="range" id="shadow-blur-range" min="0" max="50" value="20" />
+                  <div>
+                    <div class="toggle-title">Tambahkan Bayangan</div>
+                    <div class="toggle-sub">Drop shadow melayang realistis</div>
                   </div>
-                  <div class="slider-inline-group" id="shadow-offset-group">
-                    <label>Jarak:</label>
-                    <input type="range" id="shadow-offset-range" min="0" max="40" value="15" />
-                  </div>
-                  <label class="toggle-pill-label">
+                </div>
+
+                <div class="side-card-field">
+                  <div class="field-header"><span>Kelembutan Bayangan</span></div>
+                  <input type="range" id="shadow-blur-range" min="0" max="50" value="20" />
+                </div>
+                <div class="side-card-field">
+                  <div class="field-header"><span>Jarak Bayangan</span></div>
+                  <input type="range" id="shadow-offset-range" min="0" max="40" value="15" />
+                </div>
+
+                <div class="side-card-toggle-row mt-12">
+                  <label class="toggle-switch">
                     <input type="checkbox" id="check-outline" />
-                    <span>Garis Tepi (Stiker)</span>
+                    <span class="slider round"></span>
                   </label>
+                  <div>
+                    <div class="toggle-title">Garis Tepi Putih (Stiker)</div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Panel: Stiker WhatsApp -->
-              <div class="popover-content hidden" id="panel-sticker">
-                <div class="popover-row">
-                  <div class="sticker-toggle-wrap">
-                    <label class="toggle-pill-label">
-                      <input type="checkbox" id="check-sticker-mode" checked />
-                      <span class="sticker-badge-text">Garis Tepi Stiker (Die-Cut)</span>
-                    </label>
+              <!-- PANEL 4: STIKER WHATSAPP -->
+              <div class="tool-card-content hidden" id="panel-sticker">
+                <h4 class="side-card-title mb-12">Stiker WhatsApp Otomatis</h4>
+                <div class="side-card-toggle-row mb-12">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="check-sticker-mode" checked />
+                    <span class="slider round"></span>
+                  </label>
+                  <div>
+                    <div class="toggle-title">Garis Tepi Die-Cut</div>
+                    <div class="toggle-sub">Garis stiker khas WhatsApp & Telegram</div>
                   </div>
+                </div>
 
-                  <div class="slider-inline-group">
-                    <label>Tebal Garis:</label>
-                    <input type="range" id="sticker-stroke-range" min="4" max="25" value="12" />
+                <div class="side-card-field">
+                  <div class="field-header">
+                    <span>Tebal Garis Stiker</span>
                     <span id="sticker-stroke-val">12px</span>
                   </div>
-
-                  <div class="swatches-flow">
-                    <button type="button" class="swatch-btn active" data-sticker-color="#ffffff" style="background: #ffffff;" title="Putih Klasik"></button>
-                    <button type="button" class="swatch-btn" data-sticker-color="#fef08a" style="background: #fef08a;" title="Kuning"></button>
-                    <button type="button" class="swatch-btn" data-sticker-color="#bbf7d0" style="background: #bbf7d0;" title="Hijau"></button>
-                    <button type="button" class="swatch-btn" data-sticker-color="#bae6fd" style="background: #bae6fd;" title="Biru"></button>
-                    <button type="button" class="swatch-btn" data-sticker-color="#fbcfe8" style="background: #fbcfe8;" title="Pink"></button>
-                  </div>
-
-                  <button type="button" class="btn-cta-sticker" id="btn-quick-dl-sticker">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span>Unduh Stiker WA (.webp 512px)</span>
-                  </button>
+                  <input type="range" id="sticker-stroke-range" min="4" max="25" value="12" />
                 </div>
-              </div>
 
-              <!-- Panel: Sesuaikan (Brightness & Contrast) -->
-              <div class="popover-content hidden" id="panel-adjust">
-                <div class="popover-row">
-                  <div class="slider-inline-group">
-                    <label>Kecerahan:</label>
-                    <input type="range" id="adj-brightness" min="50" max="150" value="100" />
-                  </div>
-                  <div class="slider-inline-group">
-                    <label>Kontras:</label>
-                    <input type="range" id="adj-contrast" min="50" max="150" value="100" />
-                  </div>
-                  <button type="button" class="btn-text-subtle" id="btn-reset-adjust">Reset</button>
+                <div class="field-header mt-12"><span>Warna Garis:</span></div>
+                <div class="swatches-flow mb-16">
+                  <button type="button" class="swatch-btn active" data-sticker-color="#ffffff" style="background: #ffffff;" title="Putih Klasik"></button>
+                  <button type="button" class="swatch-btn" data-sticker-color="#fef08a" style="background: #fef08a;" title="Kuning"></button>
+                  <button type="button" class="swatch-btn" data-sticker-color="#bbf7d0" style="background: #bbf7d0;" title="Hijau"></button>
+                  <button type="button" class="swatch-btn" data-sticker-color="#bae6fd" style="background: #bae6fd;" title="Biru"></button>
+                  <button type="button" class="swatch-btn" data-sticker-color="#fbcfe8" style="background: #fbcfe8;" title="Pink"></button>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Central Canvas Stage (Focused Card Viewport) -->
-          <div class="canvas-center-viewport">
-            <div class="canvas-card" id="main-canvas-card">
-              <!-- Custom Backdrop Layer -->
-              <div class="canvas-custom-bg" id="canvas-bg-layer"></div>
-
-              <!-- Blurred Original Background Layer -->
-              <img id="canvas-blur-layer" class="canvas-blur-layer hidden" src="" alt="Latar Asli Blur" />
-
-              <!-- Transparent Checkerboard Pattern -->
-              <div class="canvas-checkerboard" id="canvas-checkerboard"></div>
-
-              <!-- Cutout Foreground Subject Layer -->
-              <div class="canvas-subject-layer" id="canvas-subject-layer">
-                <img id="canvas-cutout-img" src="" alt="Hasil Latar Belakang Terhapus" />
-                <canvas id="brush-canvas" class="brush-canvas hidden"></canvas>
+                <button type="button" class="btn-cta-sticker btn-block" id="btn-quick-dl-sticker">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  <span>Unduh Stiker WA (.webp 512px)</span>
+                </button>
               </div>
 
-              <!-- Original Overlay (For Split Comparison Slider) -->
-              <div class="canvas-compare-clip hidden" id="canvas-compare-clip">
-                <img id="canvas-original-img" src="" alt="Foto Asli" />
-                <span class="compare-badge badge-orig">Asli</span>
-              </div>
-              <span class="compare-badge badge-clean hidden" id="badge-clean">Terhapus</span>
-
-              <!-- Slider Split Divider Line -->
-              <div class="compare-slider-divider hidden" id="compare-slider-divider">
-                <div class="compare-slider-handle">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              <!-- PANEL 5: SESUAIKAN -->
+              <div class="tool-card-content hidden" id="panel-adjust">
+                <h4 class="side-card-title mb-12">Penyesuaian Gambar</h4>
+                <div class="side-card-field">
+                  <div class="field-header"><span>Kecerahan (Brightness)</span></div>
+                  <input type="range" id="adj-brightness" min="50" max="150" value="100" />
                 </div>
+                <div class="side-card-field">
+                  <div class="field-header"><span>Kontras (Contrast)</span></div>
+                  <input type="range" id="adj-contrast" min="50" max="150" value="100" />
+                </div>
+                <button type="button" class="btn-subtle-full mt-12" id="btn-reset-adjust">Reset Penyesuaian</button>
               </div>
-            </div>
+            </aside>
           </div>
 
           <!-- Bottom Multi-Image Gallery Bar (Mirip yang di screenshot: tombol + dan thumbnail aktif) -->
