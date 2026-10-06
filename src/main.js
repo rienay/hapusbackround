@@ -6,29 +6,34 @@ import confetti from 'canvas-confetti';
    State & Multi-Image Gallery Store
    ========================================================================== */
 const appState = {
-  // Gallery list: array of image objects
-  // { id, name, originalUrl, resultBlob, resultUrl, width, height, bgMode, bgColor, bgGrad, customBgUrl, blurAmount, shadowOn, shadowBlur, shadowOffset, outlineOn, brightness, contrast, history: [] }
+  // Gallery items: array of { id, name, originalUrl, originalCanvas, workingCanvas, width, height, bgMode, bgColor, bgGrad, customBgUrl, blurAmount, shadowOn, shadowBlur, shadowOffset, outlineOn, brightness, contrast, history: [], redoStack: [] }
   items: [],
   activeIndex: -1,
-  
+
   // UI states
   isComparing: false,
   splitPercent: 50,
   isDraggingSlider: false,
-  activePanel: null, // 'panel-cutout' | 'panel-background' | 'panel-effects' | 'panel-sticker' | 'panel-adjust' | null
-  
-  // Brush & Cutout state
-  brushMode: 'erase', // 'erase' | 'restore' | 'color-wand'
-  brushSize: 25,
+  activePanel: 'panel-cutout', // 'panel-cutout' | 'panel-background' | 'panel-effects' | 'panel-adjust' | null
+
+  // Cutout 5 Methods State
+  cutoutMode: 'color-wand', // 'color-wand' | 'erase' | 'restore' | 'box-select'
+  brushSize: 30,
   colorTolerance: 25,
-  isMagicBrush: true,
+  isContiguousColor: true,
   isPainting: false,
-  
+  lastPaintPos: null,
+
+  // Box Selection State
+  isSelectingBox: false,
+  boxStartCanvasPos: null,
+  selectedBoxCoords: null, // { x, y, w, h } in canvas pixel space
+
   theme: 'light',
 };
 
 /* ==========================================================================
-   DOM Elements
+   DOM Elements Map
    ========================================================================== */
 const els = {
   // Screens
@@ -48,7 +53,7 @@ const els = {
   btnBrowseFile: document.getElementById('btn-browse-file'),
   samplePills: document.querySelectorAll('.sample-pill-btn'),
 
-  // Processing Screen
+  // Processing Screen (kept for fallback / bulk if needed)
   procStatusTitle: document.getElementById('proc-status-title'),
   procStatusDetail: document.getElementById('proc-status-detail'),
   procProgressTrack: document.getElementById('proc-progress-track'),
@@ -64,18 +69,30 @@ const els = {
   toolCardContents: document.querySelectorAll('.tool-card-content'),
   btnCloseSideCard: document.getElementById('btn-close-side-card'),
 
-  // Cutout Tools: Kuas & Tembak Warna
-  btnBrushEraseMode: document.getElementById('btn-brush-erase-mode'),
-  btnBrushRestoreMode: document.getElementById('btn-brush-restore-mode'),
-  btnBrushColorWandMode: document.getElementById('btn-brush-color-wand-mode'),
-  brushSizeField: document.getElementById('brush-size-field'),
-  brushSizeInput: document.getElementById('brush-size-input'),
-  brushSizeDisplay: document.getElementById('brush-size-display'),
-  colorToleranceField: document.getElementById('color-tolerance-field'),
+  // Cutout Tools (5 Methods)
+  btnRunAiBg: document.getElementById('btn-run-ai-bg'),
+  btnRunAiText: document.getElementById('btn-run-ai-text'),
+  aiProgressMini: document.getElementById('ai-progress-mini'),
+  aiProgressMiniBar: document.getElementById('ai-progress-mini-bar'),
+
+  toolSelectBtns: document.querySelectorAll('.tool-select-btn'),
+  subControlsColorWand: document.getElementById('sub-controls-color-wand'),
+  subControlsBrush: document.getElementById('sub-controls-brush'),
+  subControlsBoxSelect: document.getElementById('sub-controls-box-select'),
+
   colorToleranceInput: document.getElementById('color-tolerance-input'),
   colorToleranceDisplay: document.getElementById('color-tolerance-display'),
-  checkMagicBrush: document.getElementById('check-magic-brush'),
+  checkContiguousColor: document.getElementById('check-contiguous-color'),
+
+  brushSizeInput: document.getElementById('brush-size-input'),
+  brushSizeDisplay: document.getElementById('brush-size-display'),
+  brushHintText: document.getElementById('brush-hint-text'),
+
+  btnBoxKeepInside: document.getElementById('btn-box-keep-inside'),
+  btnBoxEraseInside: document.getElementById('btn-box-erase-inside'),
   btnResetCutout: document.getElementById('btn-reset-cutout'),
+
+  boxSelectOverlay: document.getElementById('box-select-overlay'),
   brushCursorIndicator: document.getElementById('brush-cursor-indicator'),
 
   // Download Split Dropdown
@@ -84,7 +101,7 @@ const els = {
   downloadDropdownMenu: document.getElementById('download-dropdown-menu'),
   menuItems: document.querySelectorAll('.menu-item'),
 
-  // Popover Panels: Background
+  // Background Panel
   bgTabPills: document.querySelectorAll('.bg-tab-pill'),
   stripColor: document.getElementById('strip-color'),
   stripGradient: document.getElementById('strip-gradient'),
@@ -98,22 +115,13 @@ const els = {
   customBgInput: document.getElementById('custom-bg-input'),
   btnPickCustomBg: document.getElementById('btn-pick-custom-bg'),
 
-  // Popover Panels: Effects
+  // Effects Panel
   checkShadow: document.getElementById('check-shadow'),
   shadowBlurRange: document.getElementById('shadow-blur-range'),
   shadowOffsetRange: document.getElementById('shadow-offset-range'),
   checkOutline: document.getElementById('check-outline'),
 
-  // Popover Panels: Stiker WhatsApp
-  btnToolSticker: document.getElementById('btn-tool-sticker'),
-  checkStickerMode: document.getElementById('check-sticker-mode'),
-  stickerStrokeRange: document.getElementById('sticker-stroke-range'),
-  stickerStrokeVal: document.getElementById('sticker-stroke-val'),
-  swatchesStickerColor: document.querySelectorAll('[data-sticker-color]'),
-  btnOpenInWhatsApp: document.getElementById('btn-open-in-whatsapp'),
-  btnQuickDlSticker: document.getElementById('btn-quick-dl-sticker'),
-
-  // Popover Panels: Adjust
+  // Adjust Panel
   adjBrightness: document.getElementById('adj-brightness'),
   adjContrast: document.getElementById('adj-contrast'),
   btnResetAdjust: document.getElementById('btn-reset-adjust'),
@@ -123,7 +131,6 @@ const els = {
   canvasBgLayer: document.getElementById('canvas-bg-layer'),
   canvasBlurLayer: document.getElementById('canvas-blur-layer'),
   canvasCheckerboard: document.getElementById('canvas-checkerboard'),
-  canvasCutoutImg: document.getElementById('canvas-cutout-img'),
   brushCanvas: document.getElementById('brush-canvas'),
   canvasCompareClip: document.getElementById('canvas-compare-clip'),
   canvasOriginalImg: document.getElementById('canvas-original-img'),
@@ -134,7 +141,7 @@ const els = {
   btnGalleryAdd: document.getElementById('btn-gallery-add'),
   galleryThumbsList: document.getElementById('gallery-thumbs-list'),
 
-  // Toasts
+  // Toasts & Export
   toastTray: document.getElementById('toast-tray'),
   renderExportCanvas: document.getElementById('render-export-canvas'),
 };
@@ -147,7 +154,7 @@ function showToast(message) {
   toast.className = 'toast';
   toast.textContent = message;
   els.toastTray.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  setTimeout(() => toast.remove(), 3200);
 }
 
 /* ==========================================================================
@@ -164,39 +171,15 @@ function showScreen(screenId) {
 }
 
 /* ==========================================================================
-   Processing Handler
+   Image Loader & Instant Opening (0 Detik Delay)
    ========================================================================== */
-async function createFallbackCutoutBlob(url) {
-  try {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    await new Promise((res, rej) => {
-      img.onload = res;
-      img.onerror = rej;
-      img.src = url;
-    });
-    const c = document.createElement('canvas');
-    c.width = img.naturalWidth || 800;
-    c.height = img.naturalHeight || 800;
-    const ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    return new Promise(res => c.toBlob(res, 'image/png'));
-  } catch (e) {
-    return null;
-  }
-}
-
 async function processFiles(files) {
   if (!files || files.length === 0) return;
-
-  showScreen('processing');
-  els.procProgressTrack.style.width = '15%';
-  els.procStatusTitle.textContent = 'Memuat model AI di browser...';
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     let sourceUrl = '';
-    let name = 'Gambar';
+    let name = 'Foto';
 
     if (typeof file === 'string') {
       sourceUrl = file;
@@ -206,96 +189,77 @@ async function processFiles(files) {
       name = file.name;
     }
 
-    els.procStatusTitle.textContent = `Menghapus latar belakang (${i + 1}/${files.length})...`;
-
-    let resultBlob = null;
-    let usedFallback = false;
-
-    try {
-      const config = {
-        progress: (key, current, total) => {
-          let percent = 20;
-          if (total && total > 0) percent = Math.min(95, Math.round(20 + (current / total) * 75));
-          els.procProgressTrack.style.width = `${percent}%`;
-        },
-        output: {
-          format: 'image/png',
-          quality: 0.95
-        }
-      };
-
-      resultBlob = await removeBackground(file, config);
-    } catch (err) {
-      console.warn('AI model CDN fetch issue, falling back to local canvas cutout:', err);
-      usedFallback = true;
-      resultBlob = await createFallbackCutoutBlob(sourceUrl);
-    }
-
-    if (!resultBlob) {
-      showToast('Gagal memuat gambar.');
-      continue;
-    }
-
-    const resultUrl = URL.createObjectURL(resultBlob);
-
-    // Measure dimensions
+    // Load Image to extract pristine pixels
     const img = new Image();
-    await new Promise((res) => {
+    img.crossOrigin = 'anonymous';
+    await new Promise((res, rej) => {
       img.onload = res;
+      img.onerror = () => {
+        showToast('Gagal memuat file gambar.');
+        rej();
+      };
       img.src = sourceUrl;
     });
+
+    const w = img.naturalWidth || 800;
+    const h = img.naturalHeight || 800;
+
+    // 1. Pristine Original Canvas (Reference for 100% accurate restore, never modified)
+    const origCanvas = document.createElement('canvas');
+    origCanvas.width = w;
+    origCanvas.height = h;
+    const origCtx = origCanvas.getContext('2d');
+    origCtx.drawImage(img, 0, 0);
+
+    // 2. Working Canvas (Holds current cutout state, starts identical to original)
+    const workCanvas = document.createElement('canvas');
+    workCanvas.width = w;
+    workCanvas.height = h;
+    const workCtx = workCanvas.getContext('2d');
+    workCtx.drawImage(img, 0, 0);
+
+    // 3. Initial History Snapshot
+    const initialData = workCtx.getImageData(0, 0, w, h);
 
     const newItem = {
       id: 'img_' + Date.now() + '_' + i,
       name: name,
       originalUrl: sourceUrl,
-      resultBlob: resultBlob,
-      resultUrl: resultUrl,
-      width: img.naturalWidth || 800,
-      height: img.naturalHeight || 800,
+      originalCanvas: origCanvas,
+      workingCanvas: workCanvas,
+      width: w,
+      height: h,
       bgMode: 'transparent',
       bgColor: '#ffffff',
-      bgGrad: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      bgGrad: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #f59e0b 100%)',
       customBgUrl: null,
       blurAmount: 12,
       shadowOn: false,
       shadowBlur: 20,
       shadowOffset: 15,
       outlineOn: false,
-      stickerMode: false,
-      stickerStroke: 12,
-      stickerColor: '#ffffff',
       brightness: 100,
       contrast: 100,
-      history: [],
+      history: [initialData],
+      redoStack: [],
     };
 
     appState.items.push(newItem);
-
-    if (usedFallback) {
-      showToast('Gambar siap diedit! Gunakan Tembak Warna untuk hapus background.');
-    }
   }
 
   if (appState.items.length > 0) {
     appState.activeIndex = appState.items.length - 1;
+    showScreen('studio');
     renderGalleryTray();
     loadActiveItemIntoStudio();
-    showScreen('studio');
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.8 },
-      colors: ['#2563eb', '#38bdf8', '#10b981']
-    });
-    showToast('Latar belakang berhasil dihapus!');
-  } else {
-    showScreen('upload');
+    // Open cutout panel directly so user immediately has the 5 methods
+    openToolPanel('panel-cutout');
+    showToast('✨ Foto siap! Pilih salah satu dari 5 cara hapus background.');
   }
 }
 
 /* ==========================================================================
-   Multi-Image Gallery Bottom Tray
+   Gallery Tray (Multi-Image Bottom Bar)
    ========================================================================== */
 function renderGalleryTray() {
   els.galleryThumbsList.innerHTML = '';
@@ -306,7 +270,7 @@ function renderGalleryTray() {
     thumb.title = item.name;
 
     const img = document.createElement('img');
-    img.src = item.resultUrl;
+    img.src = item.workingCanvas.toDataURL('image/png');
     thumb.appendChild(img);
 
     thumb.addEventListener('click', () => {
@@ -318,6 +282,16 @@ function renderGalleryTray() {
 
     els.galleryThumbsList.appendChild(thumb);
   });
+}
+
+function updateActiveThumb() {
+  const item = getActiveItem();
+  if (!item) return;
+  const activeThumb = els.galleryThumbsList.children[appState.activeIndex];
+  if (activeThumb) {
+    const img = activeThumb.querySelector('img');
+    if (img) img.src = item.workingCanvas.toDataURL('image/png');
+  }
 }
 
 /* ==========================================================================
@@ -334,22 +308,27 @@ function loadActiveItemIntoStudio() {
   const item = getActiveItem();
   if (!item) return;
 
-  // Set images
-  els.canvasCutoutImg.src = item.resultUrl;
+  // 1. Draw workingCanvas onto interactive brushCanvas
+  const canvas = els.brushCanvas;
+  canvas.width = item.width;
+  canvas.height = item.height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(item.workingCanvas, 0, 0);
+
+  // 2. Set compare original and blur sources
   els.canvasOriginalImg.src = item.originalUrl;
   els.canvasBlurLayer.src = item.originalUrl;
 
-  // Sync UI controls
+  // 3. Clear box selection
+  clearBoxSelection();
+
+  // 4. Sync UI
   syncBackgroundUI(item);
   syncEffectsUI(item);
-  syncStickerUI(item);
   syncAdjustUI(item);
-
-  // Apply visuals
   applyStudioVisuals(item);
-
-  // Init brush canvas
-  initBrushCanvas(item);
+  updateCutoutModeUI();
 }
 
 function applyStudioVisuals(item) {
@@ -377,33 +356,14 @@ function applyStudioVisuals(item) {
     els.canvasCheckerboard.classList.add('hidden');
   }
 
-  // 2. Cutout Filters (Shadow, Outline, Sticker, Brightness, Contrast)
+  // 2. Cutout Filters on canvas
   let filterParts = [];
-  
-  if (item.stickerMode) {
-    const s = item.stickerStroke || 12;
-    const col = item.stickerColor || '#ffffff';
-    const diag = Math.round(s * 0.707);
-    filterParts.push(
-      `drop-shadow(${s}px 0 0 ${col}) ` +
-      `drop-shadow(-${s}px 0 0 ${col}) ` +
-      `drop-shadow(0 ${s}px 0 ${col}) ` +
-      `drop-shadow(0 -${s}px 0 ${col}) ` +
-      `drop-shadow(${diag}px ${diag}px 0 ${col}) ` +
-      `drop-shadow(-${diag}px ${diag}px 0 ${col}) ` +
-      `drop-shadow(${diag}px -${diag}px 0 ${col}) ` +
-      `drop-shadow(-${diag}px -${diag}px 0 ${col}) ` +
-      `drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35))`
-    );
-  } else {
-    if (item.shadowOn) {
-      filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
-    }
-    if (item.outlineOn) {
-      filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
-    }
+  if (item.shadowOn) {
+    filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
   }
-
+  if (item.outlineOn) {
+    filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
+  }
   if (item.brightness !== 100) {
     filterParts.push(`brightness(${item.brightness}%)`);
   }
@@ -411,116 +371,7 @@ function applyStudioVisuals(item) {
     filterParts.push(`contrast(${item.contrast}%)`);
   }
 
-  els.canvasCutoutImg.style.filter = filterParts.join(' ');
-}
-
-function syncStickerUI(item) {
-  if (!els.checkStickerMode) return;
-  els.checkStickerMode.checked = item.stickerMode;
-  els.stickerStrokeRange.value = item.stickerStroke;
-  els.stickerStrokeVal.textContent = `${item.stickerStroke}px`;
-  els.swatchesStickerColor.forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-sticker-color') === item.stickerColor);
-  });
-}
-
-/* ==========================================================================
-   Action Bar & Popover Drawer Management
-   ========================================================================== */
-function toggleToolPanel(panelId) {
-  if (appState.activePanel === panelId) {
-    // Close panel
-    appState.activePanel = null;
-    if (els.toolSideCard) els.toolSideCard.classList.add('hidden');
-    els.actionTabBtns.forEach(btn => btn.classList.remove('active'));
-    els.brushCanvas.classList.add('hidden');
-    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
-    return;
-  }
-
-  appState.activePanel = panelId;
-  if (els.toolSideCard) els.toolSideCard.classList.remove('hidden');
-
-  els.actionTabBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-panel') === panelId);
-  });
-
-  if (els.toolCardContents) {
-    els.toolCardContents.forEach(p => {
-      p.classList.toggle('hidden', p.id !== panelId);
-    });
-  }
-
-  // Automatically enable sticker mode when opening sticker panel
-  if (panelId === 'panel-sticker') {
-    const item = getActiveItem();
-    if (item && !item.stickerMode) {
-      item.stickerMode = true;
-      syncStickerUI(item);
-      applyStudioVisuals(item);
-      showToast('Garis tepi stiker WhatsApp aktif');
-    }
-  }
-
-  // Enable brush overlay only when in cutout mode
-  if (panelId === 'panel-cutout') {
-    els.brushCanvas.classList.remove('hidden');
-    const item = getActiveItem();
-    if (item) initBrushCanvas(item);
-    updateBrushModeUI();
-  } else {
-    els.brushCanvas.classList.add('hidden');
-    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
-  }
-}
-
-function updateBrushModeUI() {
-  if (els.btnBrushEraseMode) els.btnBrushEraseMode.classList.toggle('active', appState.brushMode === 'erase');
-  if (els.btnBrushRestoreMode) els.btnBrushRestoreMode.classList.toggle('active', appState.brushMode === 'restore');
-  if (els.btnBrushColorWandMode) els.btnBrushColorWandMode.classList.toggle('active', appState.brushMode === 'color-wand');
-
-  if (els.colorToleranceField) {
-    els.colorToleranceField.classList.toggle('hidden', appState.brushMode !== 'color-wand');
-  }
-
-  if (els.brushSizeField) {
-    els.brushSizeField.classList.toggle('hidden', appState.brushMode === 'color-wand');
-  }
-
-  if (els.brushCanvas) {
-    els.brushCanvas.style.cursor = appState.brushMode === 'color-wand' ? 'crosshair' : 'none';
-  }
-
-  updateBrushCursorStyle();
-}
-
-function updateBrushCursorStyle() {
-  if (!els.brushCursorIndicator) return;
-  els.brushCursorIndicator.className = 'brush-cursor-indicator';
-
-  if (appState.brushMode === 'erase') {
-    els.brushCursorIndicator.classList.add('mode-erase');
-    const visualSize = getCanvasVisualBrushSize();
-    els.brushCursorIndicator.style.width = `${visualSize}px`;
-    els.brushCursorIndicator.style.height = `${visualSize}px`;
-  } else if (appState.brushMode === 'restore') {
-    els.brushCursorIndicator.classList.add('mode-restore');
-    const visualSize = getCanvasVisualBrushSize();
-    els.brushCursorIndicator.style.width = `${visualSize}px`;
-    els.brushCursorIndicator.style.height = `${visualSize}px`;
-  } else if (appState.brushMode === 'color-wand') {
-    els.brushCursorIndicator.classList.add('mode-wand');
-    els.brushCursorIndicator.style.width = '24px';
-    els.brushCursorIndicator.style.height = '24px';
-  }
-}
-
-function getCanvasVisualBrushSize() {
-  const canvas = els.brushCanvas;
-  if (!canvas || canvas.width === 0) return appState.brushSize * 2;
-  const rect = canvas.getBoundingClientRect();
-  const scale = rect.width / canvas.width;
-  return Math.max(12, Math.round(appState.brushSize * 2 * scale));
+  els.brushCanvas.style.filter = filterParts.join(' ');
 }
 
 /* Background UI Synchronization */
@@ -553,96 +404,190 @@ function syncAdjustUI(item) {
 }
 
 /* ==========================================================================
-   Compare (Before / After Split Slider)
+   Tool Panels Drawer Management
    ========================================================================== */
-function toggleCompareSlider() {
-  appState.isComparing = !appState.isComparing;
-  els.btnToggleCompare.classList.toggle('active', appState.isComparing);
+function openToolPanel(panelId) {
+  appState.activePanel = panelId;
+  els.toolSideCard.classList.remove('hidden');
 
-  els.canvasCompareClip.classList.toggle('hidden', !appState.isComparing);
-  els.compareSliderDivider.classList.toggle('hidden', !appState.isComparing);
-  els.badgeClean.classList.toggle('hidden', !appState.isComparing);
+  els.actionTabBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-panel') === panelId);
+  });
 
-  if (appState.isComparing) {
-    setComparePercent(50);
-  }
+  els.toolCardContents.forEach(p => {
+    p.classList.toggle('hidden', p.id !== panelId);
+  });
+
+  updateCutoutModeUI();
 }
 
-function setComparePercent(percent) {
-  appState.splitPercent = Math.max(0, Math.min(100, percent));
-  els.canvasCompareClip.style.width = `${appState.splitPercent}%`;
-  els.compareSliderDivider.style.left = `${appState.splitPercent}%`;
-
-  const cardWidth = els.canvasCard.clientWidth;
-  if (cardWidth > 0) {
-    els.canvasOriginalImg.style.width = `${cardWidth}px`;
+function toggleToolPanel(panelId) {
+  if (appState.activePanel === panelId) {
+    // Close panel
+    appState.activePanel = null;
+    els.toolSideCard.classList.add('hidden');
+    els.actionTabBtns.forEach(btn => btn.classList.remove('active'));
+    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
+    clearBoxSelection();
+    return;
   }
-}
-
-function initCompareSliderEvents() {
-  const card = els.canvasCard;
-
-  function handleMove(clientX) {
-    if (!appState.isComparing || !appState.isDraggingSlider) return;
-    const rect = card.getBoundingClientRect();
-    const percent = ((clientX - rect.left) / rect.width) * 100;
-    setComparePercent(percent);
-  }
-
-  card.addEventListener('mousedown', (e) => {
-    if (!appState.isComparing) return;
-    appState.isDraggingSlider = true;
-    handleMove(e.clientX);
-  });
-
-  window.addEventListener('mousemove', (e) => {
-    handleMove(e.clientX);
-  });
-
-  window.addEventListener('mouseup', () => {
-    appState.isDraggingSlider = false;
-  });
-
-  // Touch Support
-  card.addEventListener('touchstart', (e) => {
-    if (!appState.isComparing) return;
-    appState.isDraggingSlider = true;
-    if (e.touches.length > 0) handleMove(e.touches[0].clientX);
-  }, { passive: true });
-
-  window.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0) handleMove(e.touches[0].clientX);
-  }, { passive: true });
-
-  window.addEventListener('touchend', () => {
-    appState.isDraggingSlider = false;
-  });
+  openToolPanel(panelId);
 }
 
 /* ==========================================================================
-   Brush (Potongan: Erase / Restore Canvas)
+   Cutout 5 Methods: Mode Switcher & UI Sync
    ========================================================================== */
-function initBrushCanvas(item) {
-  const canvas = els.brushCanvas;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const img = els.canvasCutoutImg;
+function setCutoutMode(mode) {
+  appState.cutoutMode = mode;
+  clearBoxSelection();
+  updateCutoutModeUI();
+}
 
-  if (!img.complete || img.naturalWidth === 0) {
-    img.onload = () => initBrushCanvas(item);
+function updateCutoutModeUI() {
+  const isCutoutPanel = appState.activePanel === 'panel-cutout';
+
+  // Mode buttons active state
+  els.toolSelectBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-mode') === appState.cutoutMode);
+  });
+
+  // Sub-controls visibility
+  if (els.subControlsColorWand) {
+    els.subControlsColorWand.classList.toggle('hidden', appState.cutoutMode !== 'color-wand');
+  }
+  if (els.subControlsBrush) {
+    els.subControlsBrush.classList.toggle('hidden', appState.cutoutMode !== 'erase' && appState.cutoutMode !== 'restore');
+    if (els.brushHintText) {
+      if (appState.cutoutMode === 'erase') {
+        els.brushHintText.innerHTML = '💡 <strong>Kuas Hapus:</strong> Sapukan kuas pada foto untuk menghapus bagian yang tidak diinginkan.';
+      } else {
+        els.brushHintText.innerHTML = '💡 <strong>Pulihkan:</strong> Sapukan kuas untuk mengembalikan foto asli 100% presisi tanpa geser.';
+      }
+    }
+  }
+  if (els.subControlsBoxSelect) {
+    els.subControlsBoxSelect.classList.toggle('hidden', appState.cutoutMode !== 'box-select');
+  }
+
+  // Cursor handling
+  if (!isCutoutPanel) {
+    els.brushCanvas.style.cursor = 'default';
+    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
     return;
   }
 
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0);
-
-  // Push initial snapshot
-  if (item.history.length === 0) {
-    item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  if (appState.cutoutMode === 'color-wand') {
+    els.brushCanvas.style.cursor = 'crosshair';
+    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
+  } else if (appState.cutoutMode === 'box-select') {
+    els.brushCanvas.style.cursor = 'crosshair';
+    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
+  } else {
+    // Erase or Restore: use custom circular cursor indicator
+    els.brushCanvas.style.cursor = 'none';
+    updateBrushCursorIndicator();
   }
 }
 
+function updateBrushCursorIndicator() {
+  if (!els.brushCursorIndicator) return;
+  els.brushCursorIndicator.className = 'brush-cursor-indicator';
+
+  if (appState.cutoutMode === 'erase') {
+    els.brushCursorIndicator.classList.add('mode-erase');
+  } else if (appState.cutoutMode === 'restore') {
+    els.brushCursorIndicator.classList.add('mode-restore');
+  } else {
+    els.brushCursorIndicator.classList.add('hidden');
+    return;
+  }
+
+  const visualSize = getCanvasVisualBrushSize();
+  els.brushCursorIndicator.style.width = `${visualSize}px`;
+  els.brushCursorIndicator.style.height = `${visualSize}px`;
+}
+
+function getCanvasVisualBrushSize() {
+  const canvas = els.brushCanvas;
+  if (!canvas || canvas.width === 0) return appState.brushSize * 2;
+  const rect = canvas.getBoundingClientRect();
+  const scale = rect.width / canvas.width;
+  return Math.max(10, Math.round(appState.brushSize * 2 * scale));
+}
+
+/* ==========================================================================
+   CARA 1: Hapus Otomatis (AI Pintar)
+   ========================================================================== */
+async function runAiBackgroundRemoval() {
+  const item = getActiveItem();
+  if (!item) return;
+
+  const btn = els.btnRunAiBg;
+  const btnText = els.btnRunAiText;
+  const progressMini = els.aiProgressMini;
+  const progressBar = els.aiProgressMiniBar;
+
+  btn.disabled = true;
+  btnText.textContent = 'Memproses AI...';
+  progressMini.classList.remove('hidden');
+  progressBar.style.width = '20%';
+
+  try {
+    const config = {
+      progress: (key, current, total) => {
+        let percent = 20;
+        if (total && total > 0) percent = Math.min(95, Math.round(20 + (current / total) * 75));
+        progressBar.style.width = `${percent}%`;
+      },
+      output: { format: 'image/png', quality: 0.95 }
+    };
+
+    const blob = await removeBackground(item.originalUrl, config);
+    progressBar.style.width = '100%';
+
+    // Load AI result into Image
+    const aiImg = new Image();
+    const aiUrl = URL.createObjectURL(blob);
+    await new Promise((res, rej) => {
+      aiImg.onload = res;
+      aiImg.onerror = rej;
+      aiImg.src = aiUrl;
+    });
+
+    // Draw onto workingCanvas (scaling to item width/height)
+    const workCtx = item.workingCanvas.getContext('2d');
+    workCtx.clearRect(0, 0, item.width, item.height);
+    workCtx.drawImage(aiImg, 0, 0, item.width, item.height);
+    URL.revokeObjectURL(aiUrl);
+
+    // Update interactive brushCanvas
+    const dispCtx = els.brushCanvas.getContext('2d');
+    dispCtx.clearRect(0, 0, item.width, item.height);
+    dispCtx.drawImage(item.workingCanvas, 0, 0);
+
+    // Push snapshot
+    item.history.push(workCtx.getImageData(0, 0, item.width, item.height));
+    item.redoStack = [];
+
+    updateActiveThumb();
+    showToast('🎉 Background berhasil dihapus otomatis oleh AI!');
+    confetti({ particleCount: 35, spread: 60, origin: { y: 0.55 } });
+  } catch (err) {
+    console.error('AI removal error:', err);
+    showToast('⚠️ AI kesulitan memotong gambar ini. Gunakan Tembak Warna untuk hasil lebih presisi!');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Jalankan Hapus Otomatis (AI)';
+    setTimeout(() => {
+      progressMini.classList.add('hidden');
+      progressBar.style.width = '0%';
+    }, 600);
+  }
+}
+
+/* ==========================================================================
+   CARA 2: Tembak Warna (Color Wand / 1-Klik Titik)
+   ========================================================================== */
 function shootColor(ix, iy) {
   const item = getActiveItem();
   if (!item) return;
@@ -664,7 +609,7 @@ function shootColor(ix, iy) {
   const targetA = data[startIdx + 3];
 
   if (targetA === 0) {
-    showToast('Area ini sudah terhapus (transparan)');
+    showToast('Titik ini sudah transparan.');
     return;
   }
 
@@ -681,8 +626,8 @@ function shootColor(ix, iy) {
 
   let erasedCount = 0;
 
-  if (appState.isMagicBrush) {
-    // Smart Contiguous Flood Fill (BFS) - hapus hanya area serupa yang terhubung
+  if (appState.isContiguousColor) {
+    // Smart Contiguous Flood Fill (BFS)
     const visited = new Uint8Array(w * h);
     const queue = [ix, iy];
     visited[iy * w + ix] = 1;
@@ -721,7 +666,7 @@ function shootColor(ix, iy) {
       }
     }
   } else {
-    // Global Color Erase: Hapus seluruh piksel warna serupa di foto
+    // Global Color Erase: Erase all matching pixels in whole image
     const totalPixels = w * h;
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
@@ -734,140 +679,414 @@ function shootColor(ix, iy) {
 
   ctx.putImageData(imgData, 0, 0);
 
-  // Push to history
-  item.history.push(ctx.getImageData(0, 0, w, h));
+  // Sync to workingCanvas
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.putImageData(imgData, 0, 0);
 
-  // Update blob and displayed cutout
-  canvas.toBlob((blob) => {
-    if (blob) {
-      if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
-      item.resultBlob = blob;
-      item.resultUrl = URL.createObjectURL(blob);
-      els.canvasCutoutImg.src = item.resultUrl;
-      renderGalleryTray();
-      showToast(`🎯 Warna berhasil ditembak & dihapus! (${erasedCount.toLocaleString()} px)`);
-    }
-  }, 'image/png');
+  // Push history
+  item.history.push(ctx.getImageData(0, 0, w, h));
+  item.redoStack = [];
+
+  updateActiveThumb();
+  showToast(`🎯 Warna berhasil ditembak & dihapus! (${erasedCount.toLocaleString()} px)`);
 }
 
-function setupBrushEvents() {
+/* ==========================================================================
+   CARA 3 & 4: Kuas Hapus & Kuas Pulihkan (100% Presisi)
+   ========================================================================== */
+function paintStroke(fromPos, toPos) {
+  const item = getActiveItem();
+  if (!item) return;
+
   const canvas = els.brushCanvas;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const r = appState.brushSize;
+
+  ctx.save();
+
+  if (appState.cutoutMode === 'erase') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.lineWidth = r * 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.moveTo(fromPos.x, fromPos.y);
+    ctx.lineTo(toPos.x, toPos.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(toPos.x, toPos.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (appState.cutoutMode === 'restore') {
+    // 100% PRECISE RESTORE: Draw EXACT original pixels from item.originalCanvas!
+    const dx = toPos.x - fromPos.x;
+    const dy = toPos.y - fromPos.y;
+    const dist = Math.hypot(dx, dy);
+    const step = Math.max(1, r / 3);
+    const count = Math.max(1, Math.ceil(dist / step));
+
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i <= count; i++) {
+      const t = i / count;
+      const cx = fromPos.x + dx * t;
+      const cy = fromPos.y + dy * t;
+      ctx.moveTo(cx + r, cy);
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    }
+    ctx.clip();
+
+    // Identical 1:1 pixel mapping: draw originalCanvas at (0, 0)
+    ctx.drawImage(item.originalCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/* ==========================================================================
+   CARA 5: Hapus Bidang / Kotak Seleksi (Box Area Eraser)
+   ========================================================================== */
+function updateBoxOverlay(screenStart, screenCurrent) {
+  if (!els.boxSelectOverlay) return;
+  const cardRect = els.canvasCard.getBoundingClientRect();
+
+  const minX = Math.min(screenStart.x, screenCurrent.x) - cardRect.left;
+  const minY = Math.min(screenStart.y, screenCurrent.y) - cardRect.top;
+  const width = Math.abs(screenCurrent.x - screenStart.x);
+  const height = Math.abs(screenCurrent.y - screenStart.y);
+
+  els.boxSelectOverlay.style.left = `${minX}px`;
+  els.boxSelectOverlay.style.top = `${minY}px`;
+  els.boxSelectOverlay.style.width = `${width}px`;
+  els.boxSelectOverlay.style.height = `${height}px`;
+  els.boxSelectOverlay.classList.remove('hidden');
+}
+
+function clearBoxSelection() {
+  appState.isSelectingBox = false;
+  appState.boxStartCanvasPos = null;
+  appState.selectedBoxCoords = null;
+  if (els.boxSelectOverlay) {
+    els.boxSelectOverlay.classList.add('hidden');
+  }
+}
+
+function eraseOutsideBox() {
+  const item = getActiveItem();
+  if (!item || !appState.selectedBoxCoords) {
+    showToast('Tarik kotak seleksi terlebih dahulu pada foto.');
+    return;
+  }
+
+  const { x, y, w, h } = appState.selectedBoxCoords;
+  const canvas = els.brushCanvas;
+  const ctx = canvas.getContext('2d');
+
+  // Clear 4 sides outside the selected box
+  ctx.clearRect(0, 0, canvas.width, y);
+  ctx.clearRect(0, y + h, canvas.width, canvas.height - (y + h));
+  ctx.clearRect(0, y, x, h);
+  ctx.clearRect(x + w, y, canvas.width - (x + w), h);
+
+  // Sync to workingCanvas
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.clearRect(0, 0, item.width, item.height);
+  workCtx.drawImage(canvas, 0, 0);
+
+  // Push history
+  item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  item.redoStack = [];
+
+  clearBoxSelection();
+  updateActiveThumb();
+  showToast('✂️ Area luar kotak berhasil dihapus!');
+}
+
+function eraseInsideBox() {
+  const item = getActiveItem();
+  if (!item || !appState.selectedBoxCoords) {
+    showToast('Tarik kotak seleksi terlebih dahulu pada foto.');
+    return;
+  }
+
+  const { x, y, w, h } = appState.selectedBoxCoords;
+  const canvas = els.brushCanvas;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(x, y, w, h);
+
+  // Sync to workingCanvas
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.clearRect(0, 0, item.width, item.height);
+  workCtx.drawImage(canvas, 0, 0);
+
+  // Push history
+  item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  item.redoStack = [];
+
+  clearBoxSelection();
+  updateActiveThumb();
+  showToast('🗑️ Area dalam kotak berhasil dihapus!');
+}
+
+/* ==========================================================================
+   Canvas Coordinate Mapping & Mouse/Touch Handlers
+   ========================================================================== */
+function getCanvasCoords(e) {
+  const canvas = els.brushCanvas;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+
+  return {
+    x: Math.max(0, Math.min(canvas.width, (clientX - rect.left) * scaleX)),
+    y: Math.max(0, Math.min(canvas.height, (clientY - rect.top) * scaleY)),
+    screenX: clientX,
+    screenY: clientY,
+  };
+}
+
+function updateCursorFollower(e) {
+  if (!els.brushCursorIndicator || appState.activePanel !== 'panel-cutout') return;
+  if (appState.cutoutMode !== 'erase' && appState.cutoutMode !== 'restore') {
+    els.brushCursorIndicator.classList.add('hidden');
+    return;
+  }
+
+  const cardRect = els.canvasCard.getBoundingClientRect();
+  const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+
+  const x = clientX - cardRect.left;
+  const y = clientY - cardRect.top;
+
+  els.brushCursorIndicator.style.left = `${x}px`;
+  els.brushCursorIndicator.style.top = `${y}px`;
+  els.brushCursorIndicator.classList.remove('hidden');
+  updateBrushCursorIndicator();
+}
+
+function setupCanvasInteractions() {
+  const canvas = els.brushCanvas;
   const card = els.canvasCard;
 
-  function getCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
-    };
-  }
-
-  function updateCursorPos(e) {
-    if (!els.brushCursorIndicator || appState.activePanel !== 'panel-cutout') return;
-    const cardRect = card.getBoundingClientRect();
-    const x = e.clientX - cardRect.left;
-    const y = e.clientY - cardRect.top;
-    els.brushCursorIndicator.style.left = `${x}px`;
-    els.brushCursorIndicator.style.top = `${y}px`;
-    els.brushCursorIndicator.classList.remove('hidden');
-    updateBrushCursorStyle();
-  }
-
+  // Move & Hover
   card.addEventListener('mousemove', (e) => {
     if (appState.activePanel === 'panel-cutout') {
-      updateCursorPos(e);
+      updateCursorFollower(e);
     }
   });
 
   card.addEventListener('mouseenter', (e) => {
     if (appState.activePanel === 'panel-cutout') {
-      updateCursorPos(e);
-      els.brushCursorIndicator.classList.remove('hidden');
+      updateCursorFollower(e);
     }
   });
 
   card.addEventListener('mouseleave', () => {
-    if (els.brushCursorIndicator) {
-      els.brushCursorIndicator.classList.add('hidden');
-    }
+    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
   });
 
-  function paint(e) {
-    if (!appState.isPainting || appState.activePanel !== 'panel-cutout' || appState.brushMode === 'color-wand') return;
-    const item = getActiveItem();
-    if (!item) return;
-
-    const { x, y } = getCoords(e);
-
-    ctx.save();
-    if (appState.brushMode === 'erase') {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.arc(x, y, appState.brushSize, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (appState.brushMode === 'restore') {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(x, y, appState.brushSize, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.drawImage(els.canvasOriginalImg, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    }
-    ctx.restore();
-  }
-
+  // Mousedown / Touchstart
   canvas.addEventListener('mousedown', (e) => {
     if (appState.activePanel !== 'panel-cutout') return;
     if (e.button !== 0) return;
 
-    if (appState.brushMode === 'color-wand') {
-      const { x, y } = getCoords(e);
-      shootColor(Math.floor(x), Math.floor(y));
+    const coords = getCanvasCoords(e);
+
+    // CARA 2: Tembak Warna
+    if (appState.cutoutMode === 'color-wand') {
+      shootColor(Math.floor(coords.x), Math.floor(coords.y));
       return;
     }
 
-    appState.isPainting = true;
-    paint(e);
+    // CARA 5: Kotak Seleksi
+    if (appState.cutoutMode === 'box-select') {
+      appState.isSelectingBox = true;
+      appState.boxStartCanvasPos = { x: coords.x, y: coords.y, screenX: coords.screenX, screenY: coords.screenY };
+      return;
+    }
+
+    // CARA 3 & 4: Kuas Hapus & Pulihkan
+    if (appState.cutoutMode === 'erase' || appState.cutoutMode === 'restore') {
+      appState.isPainting = true;
+      appState.lastPaintPos = { x: coords.x, y: coords.y };
+      paintStroke(coords, coords);
+    }
   });
 
-  canvas.addEventListener('mousemove', (e) => {
-    paint(e);
+  window.addEventListener('mousemove', (e) => {
+    // Handling Box Select Drag
+    if (appState.isSelectingBox && appState.boxStartCanvasPos) {
+      const coords = getCanvasCoords(e);
+      updateBoxOverlay(
+        { x: appState.boxStartCanvasPos.screenX, y: appState.boxStartCanvasPos.screenY },
+        { x: coords.screenX, y: coords.screenY }
+      );
+      return;
+    }
+
+    // Handling Brush Paint Drag
+    if (!appState.isPainting || !appState.lastPaintPos) return;
+    const coords = getCanvasCoords(e);
+    paintStroke(appState.lastPaintPos, coords);
+    appState.lastPaintPos = { x: coords.x, y: coords.y };
   });
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('mouseup', (e) => {
+    // End Box Selection Drag
+    if (appState.isSelectingBox && appState.boxStartCanvasPos) {
+      appState.isSelectingBox = false;
+      const coords = getCanvasCoords(e);
+
+      const minX = Math.round(Math.min(appState.boxStartCanvasPos.x, coords.x));
+      const minY = Math.round(Math.min(appState.boxStartCanvasPos.y, coords.y));
+      const width = Math.round(Math.abs(coords.x - appState.boxStartCanvasPos.x));
+      const height = Math.round(Math.abs(coords.y - appState.boxStartCanvasPos.y));
+
+      if (width > 8 && height > 8) {
+        appState.selectedBoxCoords = { x: minX, y: minY, w: width, h: height };
+        showToast('Kotak seleksi siap! Pilih "Hapus Luar" atau "Hapus Dalam".');
+      } else {
+        clearBoxSelection();
+      }
+      return;
+    }
+
+    // End Brush Painting
     if (!appState.isPainting) return;
     appState.isPainting = false;
+    appState.lastPaintPos = null;
 
     const item = getActiveItem();
     if (!item) return;
 
-    // Save snapshot
-    item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    // Sync interactive canvas pixels to workingCanvas
+    const workCtx = item.workingCanvas.getContext('2d');
+    workCtx.clearRect(0, 0, item.width, item.height);
+    workCtx.drawImage(canvas, 0, 0);
 
-    // Update active item blob and img
-    canvas.toBlob((blob) => {
-      if (blob) {
-        if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
-        item.resultBlob = blob;
-        item.resultUrl = URL.createObjectURL(blob);
-        els.canvasCutoutImg.src = item.resultUrl;
-        renderGalleryTray();
-      }
-    }, 'image/png');
+    // Save undo snapshot
+    const snap = workCtx.getImageData(0, 0, item.width, item.height);
+    item.history.push(snap);
+    item.redoStack = [];
+
+    updateActiveThumb();
+  });
+}
+
+/* ==========================================================================
+   Undo, Redo & Reset Actions
+   ========================================================================== */
+function undoAction() {
+  const item = getActiveItem();
+  if (!item || item.history.length <= 1) {
+    showToast('Tidak ada langkah yang dapat diurungkan.');
+    return;
+  }
+
+  const current = item.history.pop();
+  item.redoStack.push(current);
+
+  const prev = item.history[item.history.length - 1];
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.putImageData(prev, 0, 0);
+
+  const dispCtx = els.brushCanvas.getContext('2d');
+  dispCtx.putImageData(prev, 0, 0);
+
+  updateActiveThumb();
+  showToast('↶ Tindakan diurungkan (Undo)');
+}
+
+function redoAction() {
+  const item = getActiveItem();
+  if (!item || item.redoStack.length === 0) {
+    showToast('Tidak ada langkah untuk diulangi.');
+    return;
+  }
+
+  const next = item.redoStack.pop();
+  item.history.push(next);
+
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.putImageData(next, 0, 0);
+
+  const dispCtx = els.brushCanvas.getContext('2d');
+  dispCtx.putImageData(next, 0, 0);
+
+  updateActiveThumb();
+  showToast('↷ Tindakan diulangi (Redo)');
+}
+
+function resetCutoutToOriginal() {
+  const item = getActiveItem();
+  if (!item) return;
+
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.clearRect(0, 0, item.width, item.height);
+  workCtx.drawImage(item.originalCanvas, 0, 0);
+
+  const dispCtx = els.brushCanvas.getContext('2d');
+  dispCtx.clearRect(0, 0, item.width, item.height);
+  dispCtx.drawImage(item.originalCanvas, 0, 0);
+
+  item.history.push(workCtx.getImageData(0, 0, item.width, item.height));
+  item.redoStack = [];
+
+  clearBoxSelection();
+  updateActiveThumb();
+  showToast('↺ Foto berhasil direset ke kondisi awal');
+}
+
+/* ==========================================================================
+   Compare (Before / After Split Slider)
+   ========================================================================== */
+function toggleCompareSlider() {
+  appState.isComparing = !appState.isComparing;
+  els.btnToggleCompare.classList.toggle('active', appState.isComparing);
+
+  els.canvasCompareClip.classList.toggle('hidden', !appState.isComparing);
+  els.compareSliderDivider.classList.toggle('hidden', !appState.isComparing);
+  els.badgeClean.classList.toggle('hidden', !appState.isComparing);
+
+  if (appState.isComparing) {
+    setComparePercent(50);
+  }
+}
+
+function setComparePercent(percent) {
+  appState.splitPercent = Math.max(0, Math.min(100, percent));
+  els.canvasCompareClip.style.clipPath = `polygon(0 0, ${appState.splitPercent}% 0, ${appState.splitPercent}% 100%, 0 100%)`;
+  els.compareSliderDivider.style.left = `${appState.splitPercent}%`;
+}
+
+function setupCompareSliderEvents() {
+  const card = els.canvasCard;
+
+  function handleMove(clientX) {
+    if (!appState.isComparing) return;
+    const rect = card.getBoundingClientRect();
+    const pos = ((clientX - rect.left) / rect.width) * 100;
+    setComparePercent(pos);
+  }
+
+  card.addEventListener('mousedown', (e) => {
+    if (!appState.isComparing) return;
+    appState.isDraggingSlider = true;
+    handleMove(e.clientX);
   });
 
-  // Reset Cutout
-  if (els.btnResetCutout) {
-    els.btnResetCutout.addEventListener('click', () => {
-      const item = getActiveItem();
-      if (!item) return;
-      initBrushCanvas(item);
-      showToast('Potongan direset ke awal');
-    });
-  }
+  window.addEventListener('mousemove', (e) => {
+    if (appState.isDraggingSlider) handleMove(e.clientX);
+  });
+
+  window.addEventListener('mouseup', () => {
+    appState.isDraggingSlider = false;
+  });
 }
 
 /* ==========================================================================
@@ -878,265 +1097,102 @@ async function renderExport(format = 'png') {
   if (!item) return null;
 
   const canvas = els.renderExportCanvas;
-  const ctx = canvas.getContext('2d');
   canvas.width = item.width;
   canvas.height = item.height;
+  const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // 1. Draw Background
-  if (item.bgMode === 'blur') {
-    ctx.save();
-    ctx.filter = `blur(${item.blurAmount * 2}px)`;
-    ctx.drawImage(els.canvasOriginalImg, -20, -20, canvas.width + 40, canvas.height + 40);
-    ctx.restore();
-  } else if (item.bgMode === 'color') {
-    ctx.fillStyle = item.bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (item.bgMode === 'gradient') {
-    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    if (item.bgGrad.includes('#667eea')) {
-      grad.addColorStop(0, '#667eea'); grad.addColorStop(1, '#764ba2');
-    } else if (item.bgGrad.includes('#ff9a9e')) {
-      grad.addColorStop(0, '#ff9a9e'); grad.addColorStop(1, '#fecfef');
-    } else if (item.bgGrad.includes('#0ba360')) {
-      grad.addColorStop(0, '#0ba360'); grad.addColorStop(1, '#3cba92');
-    } else if (item.bgGrad.includes('#f093fb')) {
-      grad.addColorStop(0, '#f093fb'); grad.addColorStop(1, '#f5576c');
-    } else {
-      grad.addColorStop(0, '#141e30'); grad.addColorStop(1, '#243b55');
+  if (format === 'jpg' || item.bgMode !== 'transparent') {
+    if (item.bgMode === 'color') {
+      ctx.fillStyle = item.bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (item.bgMode === 'gradient') {
+      // Create diagonal linear gradient
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, '#fef3c7');
+      grad.addColorStop(1, '#f59e0b');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (item.bgMode === 'blur') {
+      ctx.save();
+      ctx.filter = `blur(${item.blurAmount}px)`;
+      ctx.drawImage(item.originalCanvas, -20, -20, canvas.width + 40, canvas.height + 40);
+      ctx.restore();
+    } else if (item.bgMode === 'custom-img' && item.customBgUrl) {
+      const bgImg = new Image();
+      bgImg.crossOrigin = 'anonymous';
+      await new Promise(r => { bgImg.onload = r; bgImg.src = item.customBgUrl; });
+      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    } else if (format === 'jpg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (item.bgMode === 'custom-img' && item.customBgUrl) {
-    const bg = new Image();
-    bg.src = item.customBgUrl;
-    await new Promise(r => { bg.onload = r; });
-    ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
   }
 
-  // 2. Draw Shadow / Outline
-  if (item.shadowOn) {
-    ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = item.shadowBlur * 1.5;
-    ctx.shadowOffsetY = item.shadowOffset * 1.5;
-    ctx.drawImage(els.canvasCutoutImg, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
-  }
-
-  // 3. Draw Cutout Subject with adjustments
+  // 2. Draw working cutout with filters
   ctx.save();
-  if (item.brightness !== 100 || item.contrast !== 100) {
-    ctx.filter = `brightness(${item.brightness}%) contrast(${item.contrast}%)`;
+  let filterParts = [];
+  if (item.shadowOn) {
+    filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
   }
-  ctx.drawImage(els.canvasCutoutImg, 0, 0, canvas.width, canvas.height);
+  if (item.outlineOn) {
+    filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
+  }
+  if (item.brightness !== 100) filterParts.push(`brightness(${item.brightness}%)`);
+  if (item.contrast !== 100) filterParts.push(`contrast(${item.contrast}%)`);
+
+  if (filterParts.length > 0) ctx.filter = filterParts.join(' ');
+  ctx.drawImage(item.workingCanvas, 0, 0);
   ctx.restore();
 
-  const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-  return new Promise(res => canvas.toBlob(b => res(b), mime, 0.95));
+  const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+  const quality = format === 'jpg' ? 0.92 : undefined;
+
+  return new Promise(resolve => canvas.toBlob(resolve, mime, quality));
 }
 
 async function triggerDownload(format = 'png') {
   const blob = await renderExport(format);
   if (!blob) return;
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `remove-ai-${Date.now()}.${format === 'jpeg' ? 'jpg' : 'png'}`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  confetti({ particleCount: 60, spread: 60, origin: { y: 0.8 } });
-  showToast('Gambar berhasil diunduh!');
-}
-
-async function triggerCopyClipboard() {
-  try {
-    const blob = await renderExport('png');
-    if (!blob) return;
-    if (navigator.clipboard && navigator.clipboard.write) {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      showToast('Gambar disalin ke clipboard!');
-    }
-  } catch (err) {
-    console.error('Clipboard copy failed:', err);
-    showToast('Gagal menyalin gambar');
-  }
-}
-
-/* ==========================================================================
-   WhatsApp Sticker Renderer (512x512 WebP Official Standard)
-   ========================================================================== */
-async function renderWhatsAppSticker() {
   const item = getActiveItem();
-  if (!item) return null;
+  const baseName = (item ? item.name : 'pudding_bg').replace(/\.[^/.]+$/, '');
+  const ext = format === 'jpg' ? 'jpg' : 'png';
+  const fileName = `${baseName}_cutout.${ext}`;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 512, 512);
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 
-  // Standard WhatsApp sticker specs: 512x512 with 16px safety margins (max 480x480)
-  const maxDim = 480;
-  const scale = Math.min(maxDim / item.width, maxDim / item.height);
-  const dw = Math.round(item.width * scale);
-  const dh = Math.round(item.height * scale);
-  const dx = Math.round((512 - dw) / 2);
-  const dy = Math.round((512 - dh) / 2);
-
-  const strokeSize = item.stickerStroke || 12;
-  const strokeColor = item.stickerColor || '#ffffff';
-
-  // Scaled offscreen cutout
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = dw;
-  offCanvas.height = dh;
-  const octx = offCanvas.getContext('2d');
-  octx.drawImage(els.canvasCutoutImg, 0, 0, dw, dh);
-
-  // Mask silhouette for solid die-cut border
-  const maskCanvas = document.createElement('canvas');
-  maskCanvas.width = dw;
-  maskCanvas.height = dh;
-  const mctx = maskCanvas.getContext('2d');
-  mctx.drawImage(offCanvas, 0, 0);
-  mctx.globalCompositeOperation = 'source-in';
-  mctx.fillStyle = strokeColor;
-  mctx.fillRect(0, 0, dw, dh);
-
-  // 1. Draw soft drop-shadow behind sticker outline
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-  ctx.shadowBlur = 12;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 6;
-
-  // Multi-angle thick stroke outline
-  const steps = 24;
-  for (let i = 0; i < steps; i++) {
-    const angle = (i * 2 * Math.PI) / steps;
-    const ox = Math.cos(angle) * strokeSize;
-    const oy = Math.sin(angle) * strokeSize;
-    ctx.drawImage(maskCanvas, dx + ox, dy + oy);
-  }
-  ctx.restore();
-
-  // Solid stroke interior filling
-  for (let r = 1; r < strokeSize; r += 2) {
-    for (let i = 0; i < 12; i++) {
-      const angle = (i * 2 * Math.PI) / 12;
-      ctx.drawImage(maskCanvas, dx + Math.cos(angle) * r, dy + Math.sin(angle) * r);
-    }
-  }
-
-  // 2. Draw cutout subject on top
-  ctx.drawImage(offCanvas, dx, dy);
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.9);
-  });
+  showToast(`✅ Berhasil mengunduh ${fileName}!`);
+  confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
 }
 
-async function triggerStickerDownload() {
-  const blob = await renderWhatsAppSticker();
+async function copyToClipboard() {
+  const blob = await renderExport('png');
   if (!blob) return;
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `stiker-whatsapp-${Date.now()}.webp`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  confetti({ particleCount: 70, spread: 65, origin: { y: 0.8 }, colors: ['#22c55e', '#16a34a', '#86efac'] });
-  showToast('Stiker WhatsApp (.webp 512×512) berhasil diunduh!');
-}
-
-async function openInWhatsApp() {
-  const item = getActiveItem();
-  if (!item) return;
-
-  showToast('Menyiapkan stiker WhatsApp...');
-
-  // 1. Render official 512x512 WebP Sticker with die-cut outline
-  const stickerBlob = await renderWhatsAppSticker();
-  if (!stickerBlob) return;
-
-  // 2. Also prepare PNG blob for clipboard
-  let pngBlob = null;
   try {
-    pngBlob = await renderExport('png');
-  } catch (err) {}
-
-  // 3. Try Mobile / Web Share API with WebP File (Official WhatsApp mobile share)
-  const stickerFile = new File([stickerBlob], `pudding_stiker_${Date.now()}.webp`, { type: 'image/webp' });
-
-  if (navigator.canShare && navigator.canShare({ files: [stickerFile] })) {
-    try {
-      await navigator.share({
-        files: [stickerFile],
-        title: 'Stiker WhatsApp',
-        text: 'Stiker dibuat otomatis dengan Pudding.bg'
-      });
-      confetti({ particleCount: 70, spread: 65, origin: { y: 0.8 }, colors: ['#22c55e', '#16a34a', '#86efac'] });
-      showToast('Stiker dikirim ke WhatsApp! Ketuk stiker di chat lalu pilih "Tambah ke Favorit".');
-      return;
-    } catch (err) {
-      if (err.name === 'AbortError') return; // User cancelled share sheet
-    }
-  }
-
-  // 4. Desktop / WhatsApp Web Workflow:
-  // Automatically copy sticker PNG image to clipboard for direct Ctrl+V paste into WhatsApp Web
-  let copiedToClipboard = false;
-  if (pngBlob && navigator.clipboard && window.ClipboardItem) {
-    try {
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': pngBlob })
-      ]);
-      copiedToClipboard = true;
-    } catch (err) {
-      console.warn('Clipboard write fallback:', err);
-    }
-  }
-
-  // 5. Open WhatsApp Web in new tab
-  window.open('https://web.whatsapp.com', '_blank');
-
-  confetti({ particleCount: 60, spread: 60, origin: { y: 0.8 }, colors: ['#22c55e', '#16a34a', '#86efac'] });
-
-  if (copiedToClipboard) {
-    showToast('WhatsApp dibuka! Stiker sudah otomatis disalin (Tinggal Ctrl+V di chat WA, lalu klik stiker & Tambah ke Favorit).');
-  } else {
-    showToast('WhatsApp dibuka! Silakan kirim stiker ke chat lalu pilih Tambah ke Favorit.');
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': blob })
+    ]);
+    showToast('📋 Gambar transparan disalin ke Clipboard! Siap ditempel (Ctrl+V).');
+  } catch (err) {
+    console.error('Clipboard copy error:', err);
+    showToast('Gagal menyalin otomatis. Gunakan opsi Unduh PNG.');
   }
 }
 
 /* ==========================================================================
-   Wire Up All Events
+   Setup All Event Listeners
    ========================================================================== */
-function initEvents() {
-  // Brand logo click returns to upload
-  els.brandLogoBtn.addEventListener('click', () => showScreen('upload'));
-  els.navBtnUpload.addEventListener('click', () => showScreen('upload'));
-  els.navBtnBatch.addEventListener('click', () => els.mainFileInput.click());
-
-  // Theme toggle
-  els.btnThemeToggle.addEventListener('click', () => {
-    appState.theme = appState.theme === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', appState.theme);
-  });
-
-  // Browse file button & dropzone
+function setupEventListeners() {
+  // 1. Upload Screen Dropzone
   els.btnBrowseFile.addEventListener('click', () => els.mainFileInput.click());
-  els.dropArea.addEventListener('click', () => els.mainFileInput.click());
-
   els.mainFileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
       processFiles(Array.from(e.target.files));
@@ -1144,48 +1200,64 @@ function initEvents() {
     }
   });
 
-  // Drag and drop
-  ['dragenter', 'dragover'].forEach(ev => {
-    els.dropArea.addEventListener(ev, (e) => {
-      e.preventDefault(); e.stopPropagation();
-      els.dropArea.classList.add('dragover');
-    });
+  els.dropArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    els.dropArea.classList.add('dragover');
   });
-  ['dragleave', 'drop'].forEach(ev => {
-    els.dropArea.addEventListener(ev, (e) => {
-      e.preventDefault(); e.stopPropagation();
-      els.dropArea.classList.remove('dragover');
-    });
+
+  els.dropArea.addEventListener('dragleave', () => {
+    els.dropArea.classList.remove('dragover');
   });
+
   els.dropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    els.dropArea.classList.remove('dragover');
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(Array.from(e.dataTransfer.files));
     }
   });
 
-  // Paste handler (Ctrl+V)
+  // Paste (Ctrl+V) handler anywhere on page
   window.addEventListener('paste', (e) => {
-    const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+    const items = e.clipboardData?.items;
     if (!items) return;
-    for (const item of items) {
-      if (item.type.indexOf('image') !== -1) {
-        const file = item.getAsFile();
-        processFiles([file]);
-        break;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          processFiles([file]);
+          showToast('Foto dari clipboard berhasil dibuka!');
+          break;
+        }
       }
     }
   });
 
-  // Sample pill buttons
+  // Sample Images Buttons
   els.samplePills.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    btn.addEventListener('click', () => {
       const src = btn.getAttribute('data-src');
-      processFiles([src]);
+      if (src) processFiles([src]);
     });
   });
 
-  // Top action bar tabs
+  // 2. Navigation
+  els.brandLogoBtn.addEventListener('click', () => showScreen('upload'));
+  els.navBtnUpload.addEventListener('click', () => {
+    if (appState.items.length > 0) showScreen('studio');
+    else showScreen('upload');
+  });
+  els.navBtnBatch.addEventListener('click', () => {
+    els.mainFileInput.click();
+  });
+
+  // Theme toggle
+  els.btnThemeToggle.addEventListener('click', () => {
+    appState.theme = appState.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', appState.theme);
+  });
+
+  // 3. Action Bar Tabs
   els.actionTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const panelId = btn.getAttribute('data-panel');
@@ -1193,126 +1265,78 @@ function initEvents() {
     });
   });
 
-  // Compare split toggle
+  els.btnCloseSideCard.addEventListener('click', () => {
+    toggleToolPanel(appState.activePanel);
+  });
+
+  // Compare & Undo/Redo
   els.btnToggleCompare.addEventListener('click', toggleCompareSlider);
+  els.btnUndo.addEventListener('click', undoAction);
+  els.btnRedo.addEventListener('click', redoAction);
 
-  // Undo / Redo
-  els.btnUndo.addEventListener('click', () => {
-    const item = getActiveItem();
-    if (!item || item.history.length <= 1) return;
-    item.history.pop();
-    const prev = item.history[item.history.length - 1];
-    const ctx = els.brushCanvas.getContext('2d');
-    ctx.putImageData(prev, 0, 0);
-    els.brushCanvas.toBlob(blob => {
-      if (blob) {
-        item.resultBlob = blob;
-        item.resultUrl = URL.createObjectURL(blob);
-        els.canvasCutoutImg.src = item.resultUrl;
-        renderGalleryTray();
-        showToast('Perubahan diurungkan');
-      }
+  // Keyboard Shortcuts (Ctrl+Z, Ctrl+Y)
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      if (e.shiftKey) redoAction();
+      else undoAction();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      redoAction();
+    }
+  });
+
+  // 4. CARA 1: AI Button
+  els.btnRunAiBg.addEventListener('click', runAiBackgroundRemoval);
+
+  // 5. CARA 2 - 5: Mode Buttons
+  els.toolSelectBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.getAttribute('data-mode');
+      setCutoutMode(mode);
     });
   });
 
-  // Download split buttons & menu
-  els.btnMainDownload.addEventListener('click', () => triggerDownload('png'));
-  els.btnDownloadOptionsToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    els.downloadDropdownMenu.classList.toggle('hidden');
+  // Color Wand Controls
+  els.colorToleranceInput.addEventListener('input', (e) => {
+    appState.colorTolerance = parseInt(e.target.value, 10);
+    els.colorToleranceDisplay.textContent = `${appState.colorTolerance}%`;
   });
 
-  window.addEventListener('click', () => {
-    els.downloadDropdownMenu.classList.add('hidden');
+  els.checkContiguousColor.addEventListener('change', (e) => {
+    appState.isContiguousColor = e.target.checked;
   });
 
-  els.menuItems.forEach(item => {
-    item.addEventListener('click', () => {
-      const action = item.getAttribute('data-action');
-      if (action === 'open-whatsapp') openInWhatsApp();
-      else if (action === 'dl-sticker') triggerStickerDownload();
-      else if (action === 'dl-png') triggerDownload('png');
-      else if (action === 'dl-jpg') triggerDownload('jpeg');
-      else if (action === 'copy') triggerCopyClipboard();
-      els.downloadDropdownMenu.classList.add('hidden');
-    });
+  // Brush Controls
+  els.brushSizeInput.addEventListener('input', (e) => {
+    appState.brushSize = parseInt(e.target.value, 10);
+    els.brushSizeDisplay.textContent = `${appState.brushSize}px`;
+    updateBrushCursorIndicator();
   });
 
-  // Side Card close button
-  if (els.btnCloseSideCard) {
-    els.btnCloseSideCard.addEventListener('click', () => {
-      toggleToolPanel(appState.activePanel);
-    });
-  }
+  // Box Selection Action Buttons
+  els.btnBoxKeepInside.addEventListener('click', eraseOutsideBox);
+  els.btnBoxEraseInside.addEventListener('click', eraseInsideBox);
 
-  // Brush controls: Erase, Restore, Color Wand
-  if (els.btnBrushEraseMode) {
-    els.btnBrushEraseMode.addEventListener('click', () => {
-      appState.brushMode = 'erase';
-      updateBrushModeUI();
-    });
-  }
-  if (els.btnBrushRestoreMode) {
-    els.btnBrushRestoreMode.addEventListener('click', () => {
-      appState.brushMode = 'restore';
-      updateBrushModeUI();
-    });
-  }
-  if (els.btnBrushColorWandMode) {
-    els.btnBrushColorWandMode.addEventListener('click', () => {
-      appState.brushMode = 'color-wand';
-      updateBrushModeUI();
-      showToast('🎯 Mode Tembak Warna: Klik pada warna yang ingin dihapus');
-    });
-  }
+  // Reset Cutout Button
+  els.btnResetCutout.addEventListener('click', resetCutoutToOriginal);
 
-  if (els.brushSizeInput) {
-    els.brushSizeInput.addEventListener('input', (e) => {
-      appState.brushSize = parseInt(e.target.value, 10);
-      if (els.brushSizeDisplay) els.brushSizeDisplay.textContent = `${appState.brushSize}px`;
-      updateBrushCursorStyle();
-    });
-  }
-
-  if (els.colorToleranceInput) {
-    els.colorToleranceInput.addEventListener('input', (e) => {
-      appState.colorTolerance = parseInt(e.target.value, 10);
-      if (els.colorToleranceDisplay) els.colorToleranceDisplay.textContent = `${appState.colorTolerance}%`;
-    });
-  }
-
-  if (els.checkMagicBrush) {
-    els.checkMagicBrush.addEventListener('change', (e) => {
-      appState.isMagicBrush = e.target.checked;
-      if (appState.brushMode === 'color-wand') {
-        showToast(appState.isMagicBrush ? 'Kuas Ajaib aktif: Menghapus area terhubung' : 'Kuas Ajaib nonaktif: Menghapus seluruh warna serupa di gambar');
-      } else {
-        showToast(appState.isMagicBrush ? 'Kuas Ajaib aktif' : 'Kuas Ajaib dinonaktifkan');
-      }
-    });
-  }
-
-  // Background Mode Tabs
+  // 6. Background Selector Panel
   els.bgTabPills.forEach(pill => {
     pill.addEventListener('click', () => {
-      const mode = pill.getAttribute('data-bg-mode');
       const item = getActiveItem();
       if (!item) return;
-
-      item.bgMode = mode;
+      item.bgMode = pill.getAttribute('data-bg-mode');
       syncBackgroundUI(item);
       applyStudioVisuals(item);
     });
   });
 
-  // Color Swatches
   els.swatchesColor.forEach(btn => {
     btn.addEventListener('click', () => {
-      const color = btn.getAttribute('data-color');
       const item = getActiveItem();
       if (!item) return;
-      item.bgColor = color;
-      els.swatchesColor.forEach(b => b.classList.toggle('active', b === btn));
+      item.bgColor = btn.getAttribute('data-color');
+      els.swatchesColor.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       applyStudioVisuals(item);
     });
   });
@@ -1325,19 +1349,17 @@ function initEvents() {
     applyStudioVisuals(item);
   });
 
-  // Gradient Swatches
   els.swatchesGradient.forEach(btn => {
     btn.addEventListener('click', () => {
-      const grad = btn.getAttribute('data-gradient');
       const item = getActiveItem();
       if (!item) return;
-      item.bgGrad = grad;
-      els.swatchesGradient.forEach(b => b.classList.toggle('active', b === btn));
+      item.bgGrad = btn.getAttribute('data-gradient');
+      els.swatchesGradient.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       applyStudioVisuals(item);
     });
   });
 
-  // Background Blur Slider
   els.bgBlurSlider.addEventListener('input', (e) => {
     const item = getActiveItem();
     if (!item) return;
@@ -1346,37 +1368,42 @@ function initEvents() {
     applyStudioVisuals(item);
   });
 
-  // Custom Background Image Picker
   els.btnPickCustomBg.addEventListener('click', () => els.customBgInput.click());
   els.customBgInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files && e.target.files.length > 0) {
       const item = getActiveItem();
       if (!item) return;
+      if (item.customBgUrl) URL.revokeObjectURL(item.customBgUrl);
       item.customBgUrl = URL.createObjectURL(e.target.files[0]);
+      item.bgMode = 'custom-img';
+      syncBackgroundUI(item);
       applyStudioVisuals(item);
-      showToast('Latar belakang foto kustom terpasang!');
+      e.target.value = '';
     }
   });
 
-  // Effects (Shadow & Outline)
+  // 7. Effects Panel
   els.checkShadow.addEventListener('change', (e) => {
     const item = getActiveItem();
     if (!item) return;
     item.shadowOn = e.target.checked;
     applyStudioVisuals(item);
   });
+
   els.shadowBlurRange.addEventListener('input', (e) => {
     const item = getActiveItem();
     if (!item) return;
     item.shadowBlur = parseInt(e.target.value, 10);
     applyStudioVisuals(item);
   });
+
   els.shadowOffsetRange.addEventListener('input', (e) => {
     const item = getActiveItem();
     if (!item) return;
     item.shadowOffset = parseInt(e.target.value, 10);
     applyStudioVisuals(item);
   });
+
   els.checkOutline.addEventListener('change', (e) => {
     const item = getActiveItem();
     if (!item) return;
@@ -1384,48 +1411,21 @@ function initEvents() {
     applyStudioVisuals(item);
   });
 
-  // WhatsApp Sticker Controls
-  els.checkStickerMode.addEventListener('change', (e) => {
-    const item = getActiveItem();
-    if (!item) return;
-    item.stickerMode = e.target.checked;
-    applyStudioVisuals(item);
-  });
-
-  els.stickerStrokeRange.addEventListener('input', (e) => {
-    const item = getActiveItem();
-    if (!item) return;
-    item.stickerStroke = parseInt(e.target.value, 10);
-    els.stickerStrokeVal.textContent = `${item.stickerStroke}px`;
-    applyStudioVisuals(item);
-  });
-
-  els.swatchesStickerColor.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = getActiveItem();
-      if (!item) return;
-      item.stickerColor = btn.getAttribute('data-sticker-color');
-      els.swatchesStickerColor.forEach(b => b.classList.toggle('active', b === btn));
-      applyStudioVisuals(item);
-    });
-  });
-
-  if (els.btnOpenInWhatsApp) els.btnOpenInWhatsApp.addEventListener('click', openInWhatsApp);
-  if (els.btnQuickDlSticker) els.btnQuickDlSticker.addEventListener('click', triggerStickerDownload);
-
-  // Adjustments (Brightness & Contrast)
+  // 8. Adjust Panel
   els.adjBrightness.addEventListener('input', (e) => {
     const item = getActiveItem();
     if (!item) return;
     item.brightness = parseInt(e.target.value, 10);
     applyStudioVisuals(item);
   });
+
   els.adjContrast.addEventListener('input', (e) => {
     const item = getActiveItem();
     if (!item) return;
     item.contrast = parseInt(e.target.value, 10);
     applyStudioVisuals(item);
   });
+
   els.btnResetAdjust.addEventListener('click', () => {
     const item = getActiveItem();
     if (!item) return;
@@ -1433,21 +1433,38 @@ function initEvents() {
     item.contrast = 100;
     syncAdjustUI(item);
     applyStudioVisuals(item);
-    showToast('Penyesuaian direset');
   });
 
-  // Bottom gallery add button (+)
+  // 9. Download Split Dropdown
+  els.btnMainDownload.addEventListener('click', () => triggerDownload('png'));
+  els.btnDownloadOptionsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    els.downloadDropdownMenu.classList.toggle('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!els.downloadDropdownMenu.contains(e.target) && e.target !== els.btnDownloadOptionsToggle) {
+      els.downloadDropdownMenu.classList.add('hidden');
+    }
+  });
+
+  els.menuItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const action = item.getAttribute('data-action');
+      els.downloadDropdownMenu.classList.add('hidden');
+      if (action === 'dl-png') triggerDownload('png');
+      else if (action === 'dl-jpg') triggerDownload('jpg');
+      else if (action === 'copy') copyToClipboard();
+    });
+  });
+
+  // 10. Multi-image gallery add (+)
   els.btnGalleryAdd.addEventListener('click', () => els.mainFileInput.click());
 
-  // Initialize Split Slider & Brush Events
-  initCompareSliderEvents();
-  setupBrushEvents();
+  // Setup interactive handlers
+  setupCanvasInteractions();
+  setupCompareSliderEvents();
 }
 
-/* ==========================================================================
-   Start Application
-   ========================================================================== */
-document.addEventListener('DOMContentLoaded', () => {
-  initEvents();
-  showScreen('upload');
-});
+// Start application
+setupEventListeners();

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pudding BG — Hapus Background Foto & Buat Stiker WA Otomatis</title>
-    <meta name="description" content="Aplikasi hapus background foto instan berbasis AI mirip remove.bg. Berjalan 100% di browser tanpa Canva, tanpa kirim data ke server. 100% gratis & privat." />
+    <title>Pudding BG — Hapus Background Foto Instan & Presisi (5 Cara Pilihan)</title>
+    <meta name="description" content="Aplikasi hapus background foto instan berbasis AI & manual di browser. 5 pilihan cara potong: AI otomatis, tembak warna 1-klik, kuas hapus, pulihkan 100%, dan kotak seleksi. Gratis & privat." />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,7 +53,7 @@
               <span>Pudding.bg • Cepat, Halus & Tanpa Watermark</span>
             </div>
             <h1 class="upload-headline">Hapus Background Sehalus Puding</h1>
-            <p class="upload-subheadline">AI pemotong foto instan & pembuat stiker WhatsApp otomatis — 100% gratis dan privat di browsermu</p>
+            <p class="upload-subheadline">Langsung buka foto instan dengan 5 pilihan cara potong background: AI otomatis, tembak warna, kuas hapus, pulihkan 100%, dan kotak seleksi.</p>
           </div>
 
           <div class="upload-box-wrapper">
@@ -94,31 +94,31 @@
             <!-- Pudding Signature Value Props -->
             <div class="pudding-features-grid">
               <div class="feature-card">
-                <div class="feature-icon-wrapper">🍮</div>
+                <div class="feature-icon-wrapper">🎯</div>
                 <div class="feature-text">
-                  <h4 class="feature-title">Sehalus Tekstur Puding</h4>
-                  <p class="feature-desc">AI otomatis memotong tepi rambut, pakaian, dan bulu halus tanpa gerigi kaku.</p>
+                  <h4 class="feature-title">Tembak Warna 1-Klik</h4>
+                  <p class="feature-desc">Klik titik background di foto untuk melenyapkan warna serupa dalam sekejap.</p>
                 </div>
               </div>
               <div class="feature-card">
-                <div class="feature-icon-wrapper">💬</div>
+                <div class="feature-icon-wrapper">⚡</div>
                 <div class="feature-text">
-                  <h4 class="feature-title">Buka di WhatsApp Langsung</h4>
-                  <p class="feature-desc">Format stiker 512×512px die-cut otomatis siap kirim & simpan ke favorit WA.</p>
+                  <h4 class="feature-title">Hapus Otomatis (AI)</h4>
+                  <p class="feature-desc">Pilihan potong otomatis dengan deteksi kecerdasan buatan kapan pun Anda mau.</p>
                 </div>
               </div>
               <div class="feature-card">
-                <div class="feature-icon-wrapper">🪄</div>
+                <div class="feature-icon-wrapper">🖌️</div>
                 <div class="feature-text">
-                  <h4 class="feature-title">Kuas Puding & Tembak Warna</h4>
-                  <p class="feature-desc">Hapus background membandel atau pulihkan bagian gambar hanya dengan 1 sentuhan.</p>
+                  <h4 class="feature-title">Pulihkan 100% Akurat</h4>
+                  <p class="feature-desc">Sapukan kuas untuk mengembalikan foto asli tanpa geser atau duplikasi piksel.</p>
                 </div>
               </div>
               <div class="feature-card">
                 <div class="feature-icon-wrapper">🔒</div>
                 <div class="feature-text">
                   <h4 class="feature-title">100% Privat di Browser</h4>
-                  <p class="feature-desc">Foto tidak pernah diunggah ke server mana pun. Gratis, tanpa watermark.</p>
+                  <p class="feature-desc">Foto tidak pernah diunggah ke server mana pun. Gratis selamanya tanpa watermark.</p>
                 </div>
               </div>
             </div>
@@ -139,28 +139,28 @@
 
         <!-- 3. REMOVE.BG-STYLE STUDIO CANVAS STATE -->
         <section id="studio-screen" class="screen-view">
-          <!-- Top Floating Action Toolbar (Mirip remove.bg di screenshot) -->
+          <!-- Top Floating Action Toolbar -->
           <div class="top-action-bar-container">
             <div class="top-action-bar">
-              <!-- Tool 1: Potongan (Eraser / Restore) -->
+              <!-- Tool 1: Hapus Background -->
               <button type="button" class="action-tab-btn" data-panel="panel-cutout" id="btn-tool-cutout">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="m14.5 4-2.5 5 4 2 2.5-5zM6 16l6-6M3 21l3-3M3 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
                 </svg>
-                <span>Kuas Puding</span>
+                <span>Hapus Background</span>
               </button>
 
-              <!-- Tool 2: Latar Belakang -->
+              <!-- Tool 2: Ganti Latar -->
               <button type="button" class="action-tab-btn" data-panel="panel-background" id="btn-tool-background">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                <span>Latar Manis</span>
+                <span>Ganti Latar</span>
               </button>
 
-              <!-- Tool 3: Efek (Shadow & Glow) -->
+              <!-- Tool 3: Efek & Bayangan -->
               <button type="button" class="action-tab-btn" data-panel="panel-effects" id="btn-tool-effects">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="9"/>
@@ -169,18 +169,7 @@
                 <span>Bayangan 3D</span>
               </button>
 
-              <!-- Tool 4: Stiker WhatsApp -->
-              <button type="button" class="action-tab-btn btn-sticker-tab" data-panel="panel-sticker" id="btn-tool-sticker">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/>
-                  <circle cx="8.5" cy="11.5" r="1.5" fill="currentColor"/>
-                  <circle cx="15.5" cy="11.5" r="1.5" fill="currentColor"/>
-                  <path d="M9 15.5c1 1.5 5 1.5 6 0"/>
-                </svg>
-                <span>Stiker WA</span>
-              </button>
-
-              <!-- Tool 5: Sesuaikan (Brightness, Contrast) -->
+              <!-- Tool 4: Sesuaikan -->
               <button type="button" class="action-tab-btn" data-panel="panel-adjust" id="btn-tool-adjust">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
@@ -190,14 +179,14 @@
 
               <div class="action-bar-divider"></div>
 
-              <!-- Tool 6: Split Comparison Toggle -->
+              <!-- Tool 5: Split Comparison Toggle -->
               <button type="button" class="action-icon-btn" id="btn-toggle-compare" title="Bandingkan Sebelum / Sesudah">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/>
                 </svg>
               </button>
 
-              <!-- Tool 7: Undo & Redo -->
+              <!-- Tool 6: Undo & Redo -->
               <button type="button" class="action-icon-btn" id="btn-undo" title="Urungkan (Ctrl+Z)">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
@@ -209,7 +198,7 @@
                 </svg>
               </button>
 
-              <!-- Tool 8: Unduh (Download Button with Dropdown) -->
+              <!-- Tool 7: Unduh (Download Button with Dropdown) -->
               <div class="download-split-dropdown">
                 <button type="button" class="btn-download-primary" id="btn-main-download">
                   <span>Simpan / Unduh 🍮</span>
@@ -222,25 +211,11 @@
 
                 <!-- Dropdown Menu -->
                 <div class="download-menu hidden" id="download-dropdown-menu">
-                  <button type="button" class="menu-item menu-item-whatsapp" data-action="open-whatsapp">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/></svg>
-                    <div>
-                      <div class="menu-item-title" style="color: #16a34a;">Buka di WhatsApp (Kirim & Simpan)</div>
-                      <div class="menu-item-desc">Langsung buka WA & simpan stiker ke favorit</div>
-                    </div>
-                  </button>
-                  <button type="button" class="menu-item" data-action="dl-sticker">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    <div>
-                      <div class="menu-item-title">Unduh File Stiker (.webp)</div>
-                      <div class="menu-item-desc">Format resmi 512×512px WebP</div>
-                    </div>
-                  </button>
                   <button type="button" class="menu-item" data-action="dl-png">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                     <div>
                       <div class="menu-item-title">Unduh PNG (Transparan HD)</div>
-                      <div class="menu-item-desc">Resolusi penuh tanpa latar</div>
+                      <div class="menu-item-desc">Resolusi penuh transparan tanpa latar</div>
                     </div>
                   </button>
                   <button type="button" class="menu-item" data-action="dl-jpg">
@@ -279,8 +254,9 @@
 
                 <!-- Cutout Foreground Subject Layer -->
                 <div class="canvas-subject-layer" id="canvas-subject-layer">
-                  <img id="canvas-cutout-img" src="" alt="Hasil Latar Belakang Terhapus" />
-                  <canvas id="brush-canvas" class="brush-canvas hidden"></canvas>
+                  <img id="canvas-cutout-img" src="" alt="Hasil Latar Belakang Terhapus" class="hidden" />
+                  <canvas id="brush-canvas" class="brush-canvas"></canvas>
+                  <div id="box-select-overlay" class="box-select-overlay hidden"></div>
                 </div>
 
                 <!-- Original Overlay (For Split Comparison Slider) -->
@@ -303,79 +279,123 @@
               </div>
             </div>
 
-            <!-- Side Card (Matching remove.bg Screenshots) -->
+            <!-- Side Card -->
             <aside class="tool-side-card hidden" id="tool-side-card">
               <button type="button" class="side-card-close-btn" id="btn-close-side-card" title="Tutup Panel">&times;</button>
 
-              <!-- PANEL 1: POTONGAN (Kuas & Tembak Warna) -->
+              <!-- PANEL 1: 5 CARA HAPUS BACKGROUND -->
               <div class="tool-card-content hidden" id="panel-cutout">
                 <div class="side-card-header-banner">
                   <div class="banner-avatar">
                     <span class="pudding-banner-icon">🍮</span>
                   </div>
                   <div>
-                    <h4 class="banner-title">Kuas Puding & Tembak</h4>
-                    <p class="banner-desc">Potong sehalus karamel, hapus warna sekali sentuh</p>
+                    <h4 class="banner-title">Hapus Background</h4>
+                    <p class="banner-desc">5 pilihan cara potong background sesuai kebutuhan</p>
                   </div>
                 </div>
 
-                <!-- Three Big Mode Buttons -->
-                <div class="cutout-mode-grid">
-                  <button type="button" class="cutout-mode-box active" id="btn-brush-erase-mode">
-                    <div class="mode-icon-circle red">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                    </div>
-                    <span>Hapus</span>
+                <!-- CARA 1: HAPUS OTOMATIS (AI PINTAR) -->
+                <div class="cutout-section-card mb-14">
+                  <div class="section-card-header">
+                    <span class="method-num">1</span>
+                    <span class="method-label">Hapus Otomatis (AI Pintar)</span>
+                  </div>
+                  <p class="section-card-desc">Deteksi otomatis objek & potong background secara instan.</p>
+                  <button type="button" class="btn-cta-run-ai" id="btn-run-ai-bg">
+                    <span class="ai-btn-icon">⚡</span>
+                    <span id="btn-run-ai-text">Jalankan Hapus Otomatis (AI)</span>
+                  </button>
+                  <div class="ai-progress-mini hidden" id="ai-progress-mini">
+                    <div class="ai-progress-mini-bar" id="ai-progress-mini-bar"></div>
+                  </div>
+                </div>
+
+                <!-- CARA 2 - 5: PILIHAN ALAT TITIK & MANUAL -->
+                <div class="section-card-header mb-8">
+                  <span class="method-num">2 - 5</span>
+                  <span class="method-label">Pilih Titik / Alat Manual:</span>
+                </div>
+
+                <!-- Mode Selector Grid (4 Alat: Tembak Warna, Kuas Hapus, Pulihkan, Kotak Seleksi) -->
+                <div class="cutout-tools-grid mb-14">
+                  <button type="button" class="tool-select-btn active" id="btn-mode-color-wand" data-mode="color-wand">
+                    <div class="tool-select-icon purple">🎯</div>
+                    <div class="tool-select-name">Tembak Warna</div>
+                    <div class="tool-select-hint">1-Klik Titik</div>
                   </button>
 
-                  <button type="button" class="cutout-mode-box" id="btn-brush-restore-mode">
-                    <div class="mode-icon-circle blue">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                    </div>
-                    <span>Pulihkan</span>
+                  <button type="button" class="tool-select-btn" id="btn-mode-erase" data-mode="erase">
+                    <div class="tool-select-icon red">🧹</div>
+                    <div class="tool-select-name">Kuas Hapus</div>
+                    <div class="tool-select-hint">Hapus Bebas</div>
                   </button>
 
-                  <button type="button" class="cutout-mode-box" id="btn-brush-color-wand-mode" title="Klik satu warna di gambar untuk langsung menghapus semua warna tersebut">
-                    <div class="mode-icon-circle purple">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m14 2 4 4-12 12-4-4z"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="1.5"/></svg>
-                    </div>
-                    <span>Tembak Warna</span>
+                  <button type="button" class="tool-select-btn" id="btn-mode-restore" data-mode="restore">
+                    <div class="tool-select-icon blue">🖌️</div>
+                    <div class="tool-select-name">Pulihkan</div>
+                    <div class="tool-select-hint">Asli 100%</div>
+                  </button>
+
+                  <button type="button" class="tool-select-btn" id="btn-mode-box-select" data-mode="box-select">
+                    <div class="tool-select-icon amber">✂️</div>
+                    <div class="tool-select-name">Kotak Seleksi</div>
+                    <div class="tool-select-hint">Pilih Bidang</div>
                   </button>
                 </div>
 
-                <!-- Brush Size Slider -->
-                <div class="side-card-field" id="brush-size-field">
-                  <div class="field-header">
-                    <span>Ukuran Kuas</span>
-                    <span id="brush-size-display">25px</span>
+                <!-- Controls for Mode: Tembak Warna -->
+                <div class="tool-sub-controls" id="sub-controls-color-wand">
+                  <div class="side-card-field">
+                    <div class="field-header">
+                      <span>Kepekaan Warna (Toleransi)</span>
+                      <span id="color-tolerance-display">25%</span>
+                    </div>
+                    <input type="range" id="color-tolerance-input" min="1" max="75" value="25" />
+                    <div class="field-hint-text">💡 <strong>Cara pakai:</strong> Cukup klik pada titik background di gambar untuk melenyapkan warna tersebut.</div>
                   </div>
-                  <input type="range" id="brush-size-input" min="5" max="90" value="25" />
-                </div>
-
-                <!-- Color Tolerance Slider (Only in Tembak Warna Mode) -->
-                <div class="side-card-field hidden" id="color-tolerance-field">
-                  <div class="field-header">
-                    <span>Kepekaan Warna (Toleransi)</span>
-                    <span id="color-tolerance-display">25%</span>
-                  </div>
-                  <input type="range" id="color-tolerance-input" min="5" max="60" value="25" />
-                  <div class="field-hint-text">Cukup klik pada warna yang ingin dihapus di gambar.</div>
-                </div>
-
-                <!-- Magic Brush Switch -->
-                <div class="side-card-toggle-row">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="check-magic-brush" checked />
-                    <span class="slider round"></span>
-                  </label>
-                  <div>
-                    <div class="toggle-title">Kuas Ajaib</div>
-                    <div class="toggle-sub">Otomatis mengikuti lekukan & garis tepi objek</div>
+                  <div class="side-card-toggle-row mt-8">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="check-contiguous-color" checked />
+                      <span class="slider round"></span>
+                    </label>
+                    <div>
+                      <div class="toggle-title">Area Terhubung Saja</div>
+                      <div class="toggle-sub">Hanya warna yang menyambung (tidak merusak objek)</div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="side-card-actions">
-                  <button type="button" class="btn-subtle-full" id="btn-reset-cutout">Reset ke Awal</button>
+                <!-- Controls for Mode: Kuas Hapus & Pulihkan -->
+                <div class="tool-sub-controls hidden" id="sub-controls-brush">
+                  <div class="side-card-field">
+                    <div class="field-header">
+                      <span>Ukuran Kuas</span>
+                      <span id="brush-size-display">30px</span>
+                    </div>
+                    <input type="range" id="brush-size-input" min="5" max="120" value="30" />
+                  </div>
+                  <div class="field-hint-text" id="brush-hint-text">💡 Sapukan kuas pada gambar untuk menghapus.</div>
+                </div>
+
+                <!-- Controls for Mode: Kotak Seleksi -->
+                <div class="tool-sub-controls hidden" id="sub-controls-box-select">
+                  <div class="field-hint-text mb-8">💡 <strong>Tarik kotak</strong> di atas foto untuk memilih area, lalu tekan tombol di bawah:</div>
+                  <div class="box-select-btn-group">
+                    <button type="button" class="btn-box-action" id="btn-box-keep-inside">
+                      <span>✂️ Hapus Area Luar Kotak</span>
+                    </button>
+                    <button type="button" class="btn-box-action subtle" id="btn-box-erase-inside">
+                      <span>🗑️ Hapus Area Dalam Kotak</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Bottom Actions -->
+                <div class="side-card-actions mt-16">
+                  <button type="button" class="btn-subtle-full" id="btn-reset-cutout">
+                    <span>↺ Reset ke Foto Asli Awal</span>
+                  </button>
                 </div>
               </div>
 
@@ -472,56 +492,7 @@
                 </div>
               </div>
 
-              <!-- PANEL 4: STIKER WHATSAPP -->
-              <div class="tool-card-content hidden" id="panel-sticker">
-                <h4 class="side-card-title mb-12">Stiker WhatsApp Otomatis</h4>
-                <div class="side-card-toggle-row mb-12">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="check-sticker-mode" checked />
-                    <span class="slider round"></span>
-                  </label>
-                  <div>
-                    <div class="toggle-title">Garis Tepi Die-Cut</div>
-                    <div class="toggle-sub">Garis stiker khas WhatsApp & Telegram</div>
-                  </div>
-                </div>
-
-                <div class="side-card-field">
-                  <div class="field-header">
-                    <span>Tebal Garis Stiker</span>
-                    <span id="sticker-stroke-val">12px</span>
-                  </div>
-                  <input type="range" id="sticker-stroke-range" min="4" max="25" value="12" />
-                </div>
-
-                <div class="field-header mt-12"><span>Warna Garis:</span></div>
-                <div class="swatches-flow mb-16">
-                  <button type="button" class="swatch-btn active" data-sticker-color="#ffffff" style="background: #ffffff;" title="Putih Klasik"></button>
-                  <button type="button" class="swatch-btn" data-sticker-color="#fef08a" style="background: #fef08a;" title="Kuning"></button>
-                  <button type="button" class="swatch-btn" data-sticker-color="#bbf7d0" style="background: #bbf7d0;" title="Hijau"></button>
-                  <button type="button" class="swatch-btn" data-sticker-color="#bae6fd" style="background: #bae6fd;" title="Biru"></button>
-                  <button type="button" class="swatch-btn" data-sticker-color="#fbcfe8" style="background: #fbcfe8;" title="Pink"></button>
-                </div>
-
-                <div class="sticker-actions-stack">
-                  <button type="button" class="btn-cta-whatsapp-open" id="btn-open-in-whatsapp">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-5.016-1.354L2 22l1.393-4.872A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2z"/></svg>
-                    <span>Buka di WhatsApp (Kirim & Simpan)</span>
-                  </button>
-
-                  <div class="wa-auto-save-tip">
-                    <div class="tip-badge">💡 Cara Otomatis Tersimpan:</div>
-                    <p>Setelah terbuka di WhatsApp, kirim ke chat lalu <strong>klik/tap stikernya</strong> dan pilih <strong>"Tambah ke Favorit"</strong>. Stiker otomatis tersimpan permanen di WhatsApp Anda!</p>
-                  </div>
-
-                  <button type="button" class="btn-subtle-full" id="btn-quick-dl-sticker">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span>Unduh File Stiker (.webp)</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- PANEL 5: SESUAIKAN -->
+              <!-- PANEL 4: SESUAIKAN -->
               <div class="tool-card-content hidden" id="panel-adjust">
                 <h4 class="side-card-title mb-12">Penyesuaian Gambar</h4>
                 <div class="side-card-field">
