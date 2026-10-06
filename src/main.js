@@ -1338,7 +1338,7 @@ async function triggerDownload(quality = 'hd') {
   const item = getActiveItem();
   if (!item) return;
 
-  // Intercept Unduh HD if not unlocked yet
+  // Intercept Unduh HD if not unlocked for 1x download
   if (quality === 'hd' && !isHdUnlocked(item)) {
     openPaywallModal();
     return;
@@ -1346,6 +1346,11 @@ async function triggerDownload(quality = 'hd') {
 
   const blob = await renderExport(quality);
   if (!blob) return;
+
+  // Satu kali bayar = satu kali unduh HD (token langsung dikonsumsi)
+  if (quality === 'hd') {
+    item.hdUnlockedOneTime = false;
+  }
 
   const baseName = (item ? item.name : 'pudding_bg').replace(/\.[^/.]+$/, '');
   const ext = (item && item.bgMode !== 'transparent') ? 'jpg' : 'png';
@@ -1435,14 +1440,8 @@ async function copyToClipboard() {
 let currentPendingPayment = null;
 
 function isHdUnlocked(item) {
-  // Check 24-hour pass
-  const passExpiry = parseInt(localStorage.getItem('pudding_pro_pass_expiry') || '0', 10);
-  if (passExpiry > Date.now()) return true;
-
-  // Check photo-specific unlock
-  if (item && item.hdUnlocked) return true;
-
-  return false;
+  // 1 kali bayar untuk 1 kali unduh HD
+  return Boolean(item && item.hdUnlockedOneTime);
 }
 
 function openPaywallModal() {
@@ -1451,12 +1450,6 @@ function openPaywallModal() {
   els.paywallStepWaiting.classList.add('hidden');
   els.modalPaywallHd.classList.remove('hidden');
 
-  // Default select 1 Foto HD (Rp 2.000)
-  const singleRadio = document.querySelector('input[name="paywall-plan"][value="2000"]');
-  if (singleRadio) singleRadio.checked = true;
-  if (els.optPlanSingle) els.optPlanSingle.classList.add('selected');
-  if (els.optPlanDay) els.optPlanDay.classList.remove('selected');
-  if (els.payAmountLabel) els.payAmountLabel.textContent = 'Rp 2.000';
   if (els.btnPayQrisAction) els.btnPayQrisAction.disabled = false;
   if (els.btnPayQrisText) els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 2.000)';
 }
@@ -1466,16 +1459,14 @@ function closePaywallModal() {
 }
 
 async function initiateQrisPayment() {
-  const selectedRadio = document.querySelector('input[name="paywall-plan"]:checked');
-  const amount = parseInt(selectedRadio ? selectedRadio.value : '2000', 10);
-  const planType = amount === 5000 ? 'day' : 'single';
+  const amount = 2000; // 1x Unduh HD selalu Rp 2.000
 
   if (els.btnPayQrisAction) els.btnPayQrisAction.disabled = true;
   if (els.btnPayQrisText) els.btnPayQrisText.textContent = '⏳ Menyiapkan QRIS SumoPod...';
 
   try {
     const orderId = `PUDDING-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const returnUrl = window.location.origin + window.location.pathname + `?paid=true&plan=${planType}`;
+    const returnUrl = window.location.origin + window.location.pathname + '?paid=true';
 
     const res = await fetch('/api/create-payment', {
       method: 'POST',
@@ -1493,7 +1484,6 @@ async function initiateQrisPayment() {
     }
 
     currentPendingPayment = {
-      plan: planType,
       amount: amount,
       paymentUrl: data.payment_link_url
     };
@@ -1504,7 +1494,7 @@ async function initiateQrisPayment() {
     // Switch modal to step 2 (Waiting/Confirm)
     els.paywallStepChoose.classList.add('hidden');
     els.paywallStepWaiting.classList.remove('hidden');
-    els.waitingAmountVal.textContent = `Rp ${amount.toLocaleString('id-ID')}`;
+    els.waitingAmountVal.textContent = 'Rp 2.000';
     els.linkReopenQris.href = data.payment_link_url;
 
     showToast('📱 Halaman QRIS dibuka! Silakan scan barcode.');
@@ -1513,20 +1503,14 @@ async function initiateQrisPayment() {
     showToast(`⚠️ ${err.message || 'Gagal menghubungi server QRIS SumoPod'}`);
   } finally {
     if (els.btnPayQrisAction) els.btnPayQrisAction.disabled = false;
-    if (els.btnPayQrisText) els.btnPayQrisText.textContent = `⚡ Bayar via QRIS Instan (Rp ${amount.toLocaleString('id-ID')})`;
+    if (els.btnPayQrisText) els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 2.000)';
   }
 }
 
-function handlePaymentSuccess(planType = 'single') {
-  if (planType === 'day') {
-    const expiry = Date.now() + 24 * 60 * 60 * 1000;
-    localStorage.setItem('pudding_pro_pass_expiry', expiry.toString());
-    showToast('👑 Pass Seharian Aktif! Unduh HD sepuasnya selama 24 jam.');
-  } else {
-    const item = getActiveItem();
-    if (item) item.hdUnlocked = true;
-    showToast('🎉 Pembayaran QRIS Berhasil! Unduh kualitas HD dibuka.');
-  }
+function handlePaymentSuccess() {
+  const item = getActiveItem();
+  if (item) item.hdUnlockedOneTime = true;
+  showToast('🎉 Pembayaran QRIS Berhasil! Unduh 1x kualitas HD dibuka.');
 
   closePaywallModal();
   confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } });
@@ -1536,8 +1520,7 @@ function handlePaymentSuccess(planType = 'single') {
 function checkUrlPaymentCallback() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('paid') === 'true') {
-    const plan = params.get('plan') || 'single';
-    handlePaymentSuccess(plan);
+    handlePaymentSuccess();
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
@@ -1845,45 +1828,7 @@ function setupEventListeners() {
     });
   }
 
-  // Plan radio buttons
-  els.planRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      const val = radio.value;
-      if (val === '5000') {
-        els.optPlanSingle.classList.remove('selected');
-        els.optPlanDay.classList.add('selected');
-        els.payAmountLabel.textContent = 'Rp 5.000';
-        els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 5.000)';
-      } else {
-        els.optPlanSingle.classList.add('selected');
-        els.optPlanDay.classList.remove('selected');
-        els.payAmountLabel.textContent = 'Rp 2.000';
-        els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 2.000)';
-      }
-    });
-  });
-
-  if (els.optPlanSingle) {
-    els.optPlanSingle.addEventListener('click', () => {
-      const r = els.optPlanSingle.querySelector('input');
-      if (r && !r.checked) {
-        r.checked = true;
-        r.dispatchEvent(new Event('change'));
-      }
-    });
-  }
-
-  if (els.optPlanDay) {
-    els.optPlanDay.addEventListener('click', () => {
-      const r = els.optPlanDay.querySelector('input');
-      if (r && !r.checked) {
-        r.checked = true;
-        r.dispatchEvent(new Event('change'));
-      }
-    });
-  }
-
-  // Pay button action
+  // Pay button action (1x Unduh HD Rp 2.000)
   if (els.btnPayQrisAction) {
     els.btnPayQrisAction.addEventListener('click', initiateQrisPayment);
   }
@@ -1899,8 +1844,7 @@ function setupEventListeners() {
   // Waiting step buttons
   if (els.btnConfirmPaid) {
     els.btnConfirmPaid.addEventListener('click', () => {
-      const plan = currentPendingPayment ? currentPendingPayment.plan : 'single';
-      handlePaymentSuccess(plan);
+      handlePaymentSuccess();
     });
   }
 

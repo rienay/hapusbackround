@@ -1910,7 +1910,47 @@ button {
   font-size: 0.95rem;
 }
 
-/* Plan Options */
+/* Single Offer Box (1x Bayar untuk 1x Unduh HD) */
+.paywall-single-offer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.14);
+}
+.offer-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 2px;
+}
+.offer-desc {
+  font-size: 0.72rem;
+  color: #b45309;
+}
+.offer-price {
+  text-align: right;
+  flex-shrink: 0;
+  padding-left: 12px;
+}
+.price-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #b45309;
+  display: block;
+  line-height: 1.1;
+}
+.price-unit {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+/* Plan Options (Kept for fallback if needed) */
 .paywall-plan-cards {
   display: flex;
   flex-direction: column;
