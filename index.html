@@ -214,21 +214,30 @@
                   <button type="button" class="menu-item" data-action="dl-hd">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                     <div>
-                      <div class="menu-item-title">Unduh HD</div>
-                      <div class="menu-item-desc">Kualitas tinggi resolusi penuh asli</div>
+                      <div class="menu-item-title-row">
+                        <span class="menu-item-title">Unduh HD</span>
+                        <span class="badge-pro-qris">👑 Rp 2.000</span>
+                      </div>
+                      <div class="menu-item-desc">Resolusi penuh asli 100% tanpa kompresi</div>
                     </div>
                   </button>
                   <button type="button" class="menu-item" data-action="dl-standard">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     <div>
-                      <div class="menu-item-title">Unduh Standar</div>
-                      <div class="menu-item-desc">Ukuran optimal, cepat & ringan</div>
+                      <div class="menu-item-title-row">
+                        <span class="menu-item-title">Unduh Standar</span>
+                        <span class="badge-free-tag">Gratis</span>
+                      </div>
+                      <div class="menu-item-desc">Ukuran optimal, cepat & ringan (100% gratis)</div>
                     </div>
                   </button>
                   <button type="button" class="menu-item" data-action="copy">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     <div>
-                      <div class="menu-item-title">Salin</div>
+                      <div class="menu-item-title-row">
+                        <span class="menu-item-title">Salin</span>
+                        <span class="badge-free-tag">Gratis</span>
+                      </div>
                       <div class="menu-item-desc">Salin ke clipboard (bisa langsung Ctrl+V)</div>
                     </div>
                   </button>
@@ -534,6 +543,107 @@
 
       <!-- Toast Container -->
       <div id="toast-tray" class="toast-tray"></div>
+
+      <!-- Modal Paywall Unduh HD (SumoPod QRIS) -->
+      <div id="modal-paywall-hd" class="modal-backdrop hidden">
+        <div class="modal-card-paywall">
+          <button type="button" class="modal-close-btn" id="btn-close-paywall" title="Tutup">&times;</button>
+          
+          <!-- Step 1: Pilih Paket -->
+          <div id="paywall-step-choose">
+            <div class="paywall-badge-pill">
+              <span>🍮</span>
+              <span>Pudding.bg Pro • Resolusi Penuh</span>
+            </div>
+            
+            <h3 class="paywall-title">Buka Unduhan Kualitas HD</h3>
+            <p class="paywall-subtitle">Dapatkan foto resolusi penuh 100% asli tanpa kompresi, kualitas super tajam siap cetak & jualan.</p>
+
+            <div class="paywall-perks-list">
+              <div class="paywall-perk-item">
+                <span class="perk-icon">✨</span>
+                <span class="perk-text">100% Resolusi Penuh Asli (Piksel Tajam)</span>
+              </div>
+              <div class="paywall-perk-item">
+                <span class="perk-icon">🎯</span>
+                <span class="perk-text">Detail Tepi Presisi Tanpa Blur Kompresi</span>
+              </div>
+              <div class="paywall-perk-item">
+                <span class="perk-icon">🚫</span>
+                <span class="perk-text">Bebas Watermark & Kualitas Terbaik</span>
+              </div>
+            </div>
+
+            <div class="paywall-plan-cards">
+              <label class="paywall-plan-option selected" id="opt-plan-single">
+                <input type="radio" name="paywall-plan" value="2000" checked />
+                <div class="plan-info">
+                  <div class="plan-name">1 Foto HD Ini</div>
+                  <div class="plan-desc">Buka unduhan kualitas HD untuk foto ini</div>
+                </div>
+                <div class="plan-price">Rp 2.000</div>
+              </label>
+
+              <label class="paywall-plan-option" id="opt-plan-day">
+                <input type="radio" name="paywall-plan" value="5000" />
+                <div class="plan-info">
+                  <div class="plan-name">Pass Seharian (24 Jam) <span class="badge-best">Hemat</span></div>
+                  <div class="plan-desc">Unduh HD sepuasnya tanpa batas selama 1 hari</div>
+                </div>
+                <div class="plan-price">Rp 5.000</div>
+              </label>
+            </div>
+
+            <div class="paywall-actions">
+              <button type="button" class="btn-pay-qris" id="btn-pay-qris-action">
+                <span id="btn-pay-qris-text">⚡ Bayar via QRIS Instan (<span id="pay-amount-label">Rp 2.000</span>)</span>
+              </button>
+              
+              <div class="qris-supported-row">
+                <span class="qris-label-text">Scan via:</span>
+                <span class="qris-pill">BCA</span>
+                <span class="qris-pill">GoPay</span>
+                <span class="qris-pill">OVO</span>
+                <span class="qris-pill">Dana</span>
+                <span class="qris-pill">ShopeePay</span>
+                <span class="qris-pill">QRIS</span>
+              </div>
+
+              <button type="button" class="btn-free-standard-fallback" id="btn-fallback-free-standard">
+                Atau unduh versi standar gratis saja →
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Payment Pending / QRIS Launched -->
+          <div id="paywall-step-waiting" class="hidden">
+            <div class="waiting-header">
+              <div class="waiting-icon-pulse">📱</div>
+              <h3 class="paywall-title">Selesaikan Pembayaran QRIS</h3>
+              <p class="paywall-subtitle">Jendela checkout QRIS SumoPod telah dibuka. Silakan scan barcode dengan aplikasi e-wallet atau m-Banking Anda.</p>
+            </div>
+
+            <div class="waiting-box">
+              <div class="waiting-amount-display">
+                <span class="amt-label">Total Tagihan:</span>
+                <span class="amt-val" id="waiting-amount-val">Rp 2.000</span>
+              </div>
+              <a href="#" target="_blank" class="btn-reopen-qris" id="link-reopen-qris">
+                Buka Ulang Halaman QRIS SumoPod ↗
+              </a>
+            </div>
+
+            <div class="waiting-actions">
+              <button type="button" class="btn-confirm-paid" id="btn-confirm-paid">
+                <span>✅ Sudah Bayar? Buka Unduhan HD 🚀</span>
+              </button>
+              <button type="button" class="btn-cancel-pay" id="btn-cancel-pay">
+                Kembali
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Hidden Export Canvas -->

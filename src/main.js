@@ -137,6 +137,23 @@ const els = {
   // Toasts & Export
   toastTray: document.getElementById('toast-tray'),
   renderExportCanvas: document.getElementById('render-export-canvas'),
+
+  // Paywall Modal (SumoPod QRIS)
+  modalPaywallHd: document.getElementById('modal-paywall-hd'),
+  btnClosePaywall: document.getElementById('btn-close-paywall'),
+  paywallStepChoose: document.getElementById('paywall-step-choose'),
+  paywallStepWaiting: document.getElementById('paywall-step-waiting'),
+  optPlanSingle: document.getElementById('opt-plan-single'),
+  optPlanDay: document.getElementById('opt-plan-day'),
+  planRadios: document.querySelectorAll('input[name="paywall-plan"]'),
+  btnPayQrisAction: document.getElementById('btn-pay-qris-action'),
+  btnPayQrisText: document.getElementById('btn-pay-qris-text'),
+  payAmountLabel: document.getElementById('pay-amount-label'),
+  btnFallbackFreeStandard: document.getElementById('btn-fallback-free-standard'),
+  waitingAmountVal: document.getElementById('waiting-amount-val'),
+  linkReopenQris: document.getElementById('link-reopen-qris'),
+  btnConfirmPaid: document.getElementById('btn-confirm-paid'),
+  btnCancelPay: document.getElementById('btn-cancel-pay'),
 };
 
 /* ==========================================================================
@@ -1122,10 +1139,18 @@ async function renderExport(quality = 'hd') {
 }
 
 async function triggerDownload(quality = 'hd') {
+  const item = getActiveItem();
+  if (!item) return;
+
+  // Intercept Unduh HD if not unlocked yet
+  if (quality === 'hd' && !isHdUnlocked(item)) {
+    openPaywallModal();
+    return;
+  }
+
   const blob = await renderExport(quality);
   if (!blob) return;
 
-  const item = getActiveItem();
   const baseName = (item ? item.name : 'pudding_bg').replace(/\.[^/.]+$/, '');
   const ext = (item && item.bgMode !== 'transparent') ? 'jpg' : 'png';
   const suffix = quality === 'hd' ? 'HD' : 'Standar';
@@ -1205,6 +1230,119 @@ async function copyToClipboard() {
   } catch (err) {
     console.error('Clipboard copy error:', err);
     showToast('Gagal menyalin otomatis ke Clipboard.');
+  }
+}
+
+/* ==========================================================================
+   Monetization & Paywall (SumoPod QRIS)
+   ========================================================================== */
+let currentPendingPayment = null;
+
+function isHdUnlocked(item) {
+  // Check 24-hour pass
+  const passExpiry = parseInt(localStorage.getItem('pudding_pro_pass_expiry') || '0', 10);
+  if (passExpiry > Date.now()) return true;
+
+  // Check photo-specific unlock
+  if (item && item.hdUnlocked) return true;
+
+  return false;
+}
+
+function openPaywallModal() {
+  if (!els.modalPaywallHd) return;
+  els.paywallStepChoose.classList.remove('hidden');
+  els.paywallStepWaiting.classList.add('hidden');
+  els.modalPaywallHd.classList.remove('hidden');
+
+  // Default select 1 Foto HD (Rp 2.000)
+  const singleRadio = document.querySelector('input[name="paywall-plan"][value="2000"]');
+  if (singleRadio) singleRadio.checked = true;
+  if (els.optPlanSingle) els.optPlanSingle.classList.add('selected');
+  if (els.optPlanDay) els.optPlanDay.classList.remove('selected');
+  if (els.payAmountLabel) els.payAmountLabel.textContent = 'Rp 2.000';
+  if (els.btnPayQrisAction) els.btnPayQrisAction.disabled = false;
+  if (els.btnPayQrisText) els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 2.000)';
+}
+
+function closePaywallModal() {
+  if (els.modalPaywallHd) els.modalPaywallHd.classList.add('hidden');
+}
+
+async function initiateQrisPayment() {
+  const selectedRadio = document.querySelector('input[name="paywall-plan"]:checked');
+  const amount = parseInt(selectedRadio ? selectedRadio.value : '2000', 10);
+  const planType = amount === 5000 ? 'day' : 'single';
+
+  if (els.btnPayQrisAction) els.btnPayQrisAction.disabled = true;
+  if (els.btnPayQrisText) els.btnPayQrisText.textContent = '⏳ Menyiapkan QRIS SumoPod...';
+
+  try {
+    const orderId = `PUDDING-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const returnUrl = window.location.origin + window.location.pathname + `?paid=true&plan=${planType}`;
+
+    const res = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: amount,
+        order_id: orderId,
+        return_url: returnUrl
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.payment_link_url) {
+      throw new Error(data.error || 'Gagal membuat tagihan QRIS');
+    }
+
+    currentPendingPayment = {
+      plan: planType,
+      amount: amount,
+      paymentUrl: data.payment_link_url
+    };
+
+    // Open QRIS Checkout in new tab
+    window.open(data.payment_link_url, '_blank');
+
+    // Switch modal to step 2 (Waiting/Confirm)
+    els.paywallStepChoose.classList.add('hidden');
+    els.paywallStepWaiting.classList.remove('hidden');
+    els.waitingAmountVal.textContent = `Rp ${amount.toLocaleString('id-ID')}`;
+    els.linkReopenQris.href = data.payment_link_url;
+
+    showToast('📱 Halaman QRIS dibuka! Silakan scan barcode.');
+  } catch (err) {
+    console.error('Payment error:', err);
+    showToast(`⚠️ ${err.message || 'Gagal menghubungi server QRIS SumoPod'}`);
+  } finally {
+    if (els.btnPayQrisAction) els.btnPayQrisAction.disabled = false;
+    if (els.btnPayQrisText) els.btnPayQrisText.textContent = `⚡ Bayar via QRIS Instan (Rp ${amount.toLocaleString('id-ID')})`;
+  }
+}
+
+function handlePaymentSuccess(planType = 'single') {
+  if (planType === 'day') {
+    const expiry = Date.now() + 24 * 60 * 60 * 1000;
+    localStorage.setItem('pudding_pro_pass_expiry', expiry.toString());
+    showToast('👑 Pass Seharian Aktif! Unduh HD sepuasnya selama 24 jam.');
+  } else {
+    const item = getActiveItem();
+    if (item) item.hdUnlocked = true;
+    showToast('🎉 Pembayaran QRIS Berhasil! Unduh kualitas HD dibuka.');
+  }
+
+  closePaywallModal();
+  confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } });
+  triggerDownload('hd');
+}
+
+function checkUrlPaymentCallback() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('paid') === 'true') {
+    const plan = params.get('plan') || 'single';
+    handlePaymentSuccess(plan);
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
 
@@ -1500,6 +1638,84 @@ function setupEventListeners() {
 
   // 10. Multi-image gallery add (+)
   els.btnGalleryAdd.addEventListener('click', () => els.mainFileInput.click());
+
+  // 11. Paywall & QRIS Event Listeners
+  if (els.btnClosePaywall) {
+    els.btnClosePaywall.addEventListener('click', closePaywallModal);
+  }
+  if (els.modalPaywallHd) {
+    els.modalPaywallHd.addEventListener('click', (e) => {
+      if (e.target === els.modalPaywallHd) closePaywallModal();
+    });
+  }
+
+  // Plan radio buttons
+  els.planRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      const val = radio.value;
+      if (val === '5000') {
+        els.optPlanSingle.classList.remove('selected');
+        els.optPlanDay.classList.add('selected');
+        els.payAmountLabel.textContent = 'Rp 5.000';
+        els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 5.000)';
+      } else {
+        els.optPlanSingle.classList.add('selected');
+        els.optPlanDay.classList.remove('selected');
+        els.payAmountLabel.textContent = 'Rp 2.000';
+        els.btnPayQrisText.textContent = '⚡ Bayar via QRIS Instan (Rp 2.000)';
+      }
+    });
+  });
+
+  if (els.optPlanSingle) {
+    els.optPlanSingle.addEventListener('click', () => {
+      const r = els.optPlanSingle.querySelector('input');
+      if (r && !r.checked) {
+        r.checked = true;
+        r.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  if (els.optPlanDay) {
+    els.optPlanDay.addEventListener('click', () => {
+      const r = els.optPlanDay.querySelector('input');
+      if (r && !r.checked) {
+        r.checked = true;
+        r.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  // Pay button action
+  if (els.btnPayQrisAction) {
+    els.btnPayQrisAction.addEventListener('click', initiateQrisPayment);
+  }
+
+  // Fallback to standard
+  if (els.btnFallbackFreeStandard) {
+    els.btnFallbackFreeStandard.addEventListener('click', () => {
+      closePaywallModal();
+      triggerDownload('standard');
+    });
+  }
+
+  // Waiting step buttons
+  if (els.btnConfirmPaid) {
+    els.btnConfirmPaid.addEventListener('click', () => {
+      const plan = currentPendingPayment ? currentPendingPayment.plan : 'single';
+      handlePaymentSuccess(plan);
+    });
+  }
+
+  if (els.btnCancelPay) {
+    els.btnCancelPay.addEventListener('click', () => {
+      els.paywallStepWaiting.classList.add('hidden');
+      els.paywallStepChoose.classList.remove('hidden');
+    });
+  }
+
+  checkUrlPaymentCallback();
 
   // Setup interactive handlers
   setupCanvasInteractions();
