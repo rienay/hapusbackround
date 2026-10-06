@@ -53,7 +53,7 @@
               <span>Pudding.bg • Cepat, Halus & Tanpa Watermark</span>
             </div>
             <h1 class="upload-headline">Hapus Background Sehalus Puding</h1>
-            <p class="upload-subheadline">Langsung buka foto instan dengan pilihan alat potong & pulih: tembak warna 1-klik, pulih otomatis di sudut mana saja, kuas manual, dan kotak seleksi.</p>
+            <p class="upload-subheadline">Langsung buka foto instan dengan pilihan alat potong & pulih: tembak warna 1-klik, pulih otomatis di sudut, dan kuas manual presisi.</p>
           </div>
 
           <div class="upload-box-wrapper">
@@ -101,10 +101,10 @@
                 </div>
               </div>
               <div class="feature-card">
-                <div class="feature-icon-wrapper">✂️</div>
+                <div class="feature-icon-wrapper">🧹</div>
                 <div class="feature-text">
-                  <h4 class="feature-title">Kotak Seleksi Bidang</h4>
-                  <p class="feature-desc">Pilih area kotak untuk membuang background luar atau memotong area dalam seketika.</p>
+                  <h4 class="feature-title">Kuas Hapus Bebas</h4>
+                  <p class="feature-desc">Sapukan kuas untuk menghapus bagian background secara presisi dan leluasa.</p>
                 </div>
               </div>
               <div class="feature-card">
@@ -256,7 +256,6 @@
                 <div class="canvas-subject-layer" id="canvas-subject-layer">
                   <img id="canvas-cutout-img" src="" alt="Hasil Latar Belakang Terhapus" class="hidden" />
                   <canvas id="brush-canvas" class="brush-canvas"></canvas>
-                  <div id="box-select-overlay" class="box-select-overlay hidden"></div>
                 </div>
 
                 <!-- Original Overlay (For Split Comparison Slider) -->
@@ -299,7 +298,7 @@
                   <span class="method-label">Pilih Alat Potong & Pulihkan:</span>
                 </div>
 
-                <!-- Mode Selector Grid (5 Alat: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan, Kotak Seleksi) -->
+                <!-- Mode Selector Grid (4 Alat: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan) -->
                 <div class="cutout-tools-grid mb-14">
                   <button type="button" class="tool-select-btn active" id="btn-mode-color-wand" data-mode="color-wand">
                     <div class="tool-select-icon purple">🎯</div>
@@ -323,14 +322,6 @@
                     <div class="tool-select-icon teal">🖌️</div>
                     <div class="tool-select-name">Kuas Pulihkan</div>
                     <div class="tool-select-hint">Pulih Manual</div>
-                  </button>
-
-                  <button type="button" class="tool-select-btn full-width" id="btn-mode-box-select" data-mode="box-select">
-                    <div class="tool-select-icon amber">✂️</div>
-                    <div class="tool-select-col">
-                      <div class="tool-select-name">Kotak Seleksi Bidang</div>
-                      <div class="tool-select-hint">Pilih area kotak untuk potong luar / dalam</div>
-                    </div>
                   </button>
                 </div>
 
@@ -403,19 +394,6 @@
                     <input type="range" id="brush-size-input" min="5" max="120" value="30" />
                   </div>
                   <div class="field-hint-text" id="brush-hint-text">💡 Sapukan kuas pada gambar untuk menghapus.</div>
-                </div>
-
-                <!-- Controls for Mode: Kotak Seleksi -->
-                <div class="tool-sub-controls hidden" id="sub-controls-box-select">
-                  <div class="field-hint-text mb-8">💡 <strong>Tarik kotak</strong> di atas foto untuk memilih area, lalu tekan tombol di bawah:</div>
-                  <div class="box-select-btn-group">
-                    <button type="button" class="btn-box-action" id="btn-box-keep-inside">
-                      <span>✂️ Hapus Area Luar Kotak</span>
-                    </button>
-                    <button type="button" class="btn-box-action subtle" id="btn-box-erase-inside">
-                      <span>🗑️ Hapus Area Dalam Kotak</span>
-                    </button>
-                  </div>
                 </div>
 
                 <!-- Bottom Actions -->

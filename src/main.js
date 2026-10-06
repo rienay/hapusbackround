@@ -15,8 +15,8 @@ const appState = {
   isDraggingSlider: false,
   activePanel: 'panel-cutout', // 'panel-cutout' | 'panel-background' | 'panel-effects' | 'panel-adjust' | null
 
-  // Cutout Methods State
-  cutoutMode: 'color-wand', // 'color-wand' | 'restore-wand' | 'erase' | 'restore' | 'box-select'
+  // Cutout Methods State (4 Tools: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan)
+  cutoutMode: 'color-wand', // 'color-wand' | 'restore-wand' | 'erase' | 'restore'
   brushSize: 30,
   colorTolerance: 25,
   isContiguousColor: true,
@@ -25,11 +25,6 @@ const appState = {
   restoreFillType: 'color', // 'color' | 'all-transparent'
   isPainting: false,
   lastPaintPos: null,
-
-  // Box Selection State
-  isSelectingBox: false,
-  boxStartCanvasPos: null,
-  selectedBoxCoords: null, // { x, y, w, h } in canvas pixel space
 
   theme: 'light',
 };
@@ -71,12 +66,11 @@ const els = {
   toolCardContents: document.querySelectorAll('.tool-card-content'),
   btnCloseSideCard: document.getElementById('btn-close-side-card'),
 
-  // Cutout Tools
+  // Cutout Tools (4 Tools)
   toolSelectBtns: document.querySelectorAll('.tool-select-btn'),
   subControlsColorWand: document.getElementById('sub-controls-color-wand'),
   subControlsRestoreWand: document.getElementById('sub-controls-restore-wand'),
   subControlsBrush: document.getElementById('sub-controls-brush'),
-  subControlsBoxSelect: document.getElementById('sub-controls-box-select'),
 
   colorToleranceInput: document.getElementById('color-tolerance-input'),
   colorToleranceDisplay: document.getElementById('color-tolerance-display'),
@@ -91,11 +85,7 @@ const els = {
   brushSizeDisplay: document.getElementById('brush-size-display'),
   brushHintText: document.getElementById('brush-hint-text'),
 
-  btnBoxKeepInside: document.getElementById('btn-box-keep-inside'),
-  btnBoxEraseInside: document.getElementById('btn-box-erase-inside'),
   btnResetCutout: document.getElementById('btn-reset-cutout'),
-
-  boxSelectOverlay: document.getElementById('box-select-overlay'),
   brushCursorIndicator: document.getElementById('brush-cursor-indicator'),
 
   // Download Split Dropdown
@@ -438,11 +428,10 @@ function toggleToolPanel(panelId) {
 }
 
 /* ==========================================================================
-   Cutout 5 Methods: Mode Switcher & UI Sync
+   Cutout 4 Tools: Mode Switcher & UI Sync
    ========================================================================== */
 function setCutoutMode(mode) {
   appState.cutoutMode = mode;
-  clearBoxSelection();
   updateCutoutModeUI();
 }
 
@@ -471,9 +460,6 @@ function updateCutoutModeUI() {
       }
     }
   }
-  if (els.subControlsBoxSelect) {
-    els.subControlsBoxSelect.classList.toggle('hidden', appState.cutoutMode !== 'box-select');
-  }
 
   // Cursor handling
   if (!isCutoutPanel) {
@@ -483,9 +469,6 @@ function updateCutoutModeUI() {
   }
 
   if (appState.cutoutMode === 'color-wand' || appState.cutoutMode === 'restore-wand') {
-    els.brushCanvas.style.cursor = 'crosshair';
-    if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
-  } else if (appState.cutoutMode === 'box-select') {
     els.brushCanvas.style.cursor = 'crosshair';
     if (els.brushCursorIndicator) els.brushCursorIndicator.classList.add('hidden');
   } else {
@@ -831,91 +814,6 @@ function paintStroke(fromPos, toPos) {
 }
 
 /* ==========================================================================
-   CARA 5: Hapus Bidang / Kotak Seleksi (Box Area Eraser)
-   ========================================================================== */
-function updateBoxOverlay(screenStart, screenCurrent) {
-  if (!els.boxSelectOverlay) return;
-  const cardRect = els.canvasCard.getBoundingClientRect();
-
-  const minX = Math.min(screenStart.x, screenCurrent.x) - cardRect.left;
-  const minY = Math.min(screenStart.y, screenCurrent.y) - cardRect.top;
-  const width = Math.abs(screenCurrent.x - screenStart.x);
-  const height = Math.abs(screenCurrent.y - screenStart.y);
-
-  els.boxSelectOverlay.style.left = `${minX}px`;
-  els.boxSelectOverlay.style.top = `${minY}px`;
-  els.boxSelectOverlay.style.width = `${width}px`;
-  els.boxSelectOverlay.style.height = `${height}px`;
-  els.boxSelectOverlay.classList.remove('hidden');
-}
-
-function clearBoxSelection() {
-  appState.isSelectingBox = false;
-  appState.boxStartCanvasPos = null;
-  appState.selectedBoxCoords = null;
-  if (els.boxSelectOverlay) {
-    els.boxSelectOverlay.classList.add('hidden');
-  }
-}
-
-function eraseOutsideBox() {
-  const item = getActiveItem();
-  if (!item || !appState.selectedBoxCoords) {
-    showToast('Tarik kotak seleksi terlebih dahulu pada foto.');
-    return;
-  }
-
-  const { x, y, w, h } = appState.selectedBoxCoords;
-  const canvas = els.brushCanvas;
-  const ctx = canvas.getContext('2d');
-
-  // Clear 4 sides outside the selected box
-  ctx.clearRect(0, 0, canvas.width, y);
-  ctx.clearRect(0, y + h, canvas.width, canvas.height - (y + h));
-  ctx.clearRect(0, y, x, h);
-  ctx.clearRect(x + w, y, canvas.width - (x + w), h);
-
-  // Sync to workingCanvas
-  const workCtx = item.workingCanvas.getContext('2d');
-  workCtx.clearRect(0, 0, item.width, item.height);
-  workCtx.drawImage(canvas, 0, 0);
-
-  // Push history
-  item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-  item.redoStack = [];
-
-  clearBoxSelection();
-  updateActiveThumb();
-  showToast('✂️ Area luar kotak berhasil dihapus!');
-}
-
-function eraseInsideBox() {
-  const item = getActiveItem();
-  if (!item || !appState.selectedBoxCoords) {
-    showToast('Tarik kotak seleksi terlebih dahulu pada foto.');
-    return;
-  }
-
-  const { x, y, w, h } = appState.selectedBoxCoords;
-  const canvas = els.brushCanvas;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(x, y, w, h);
-
-  // Sync to workingCanvas
-  const workCtx = item.workingCanvas.getContext('2d');
-  workCtx.clearRect(0, 0, item.width, item.height);
-  workCtx.drawImage(canvas, 0, 0);
-
-  // Push history
-  item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-  item.redoStack = [];
-
-  clearBoxSelection();
-  updateActiveThumb();
-  showToast('🗑️ Area dalam kotak berhasil dihapus!');
-}
-
-/* ==========================================================================
    Canvas Coordinate Mapping & Mouse/Touch Handlers
    ========================================================================== */
 function getCanvasCoords(e) {
@@ -995,14 +893,7 @@ function setupCanvasInteractions() {
       return;
     }
 
-    // CARA 5: Kotak Seleksi
-    if (appState.cutoutMode === 'box-select') {
-      appState.isSelectingBox = true;
-      appState.boxStartCanvasPos = { x: coords.x, y: coords.y, screenX: coords.screenX, screenY: coords.screenY };
-      return;
-    }
-
-    // CARA 3 & 4: Kuas Hapus & Pulihkan
+    // ALAT 3 & 4: Kuas Hapus & Pulihkan
     if (appState.cutoutMode === 'erase' || appState.cutoutMode === 'restore') {
       appState.isPainting = true;
       appState.lastPaintPos = { x: coords.x, y: coords.y };
@@ -1011,16 +902,6 @@ function setupCanvasInteractions() {
   });
 
   window.addEventListener('mousemove', (e) => {
-    // Handling Box Select Drag
-    if (appState.isSelectingBox && appState.boxStartCanvasPos) {
-      const coords = getCanvasCoords(e);
-      updateBoxOverlay(
-        { x: appState.boxStartCanvasPos.screenX, y: appState.boxStartCanvasPos.screenY },
-        { x: coords.screenX, y: coords.screenY }
-      );
-      return;
-    }
-
     // Handling Brush Paint Drag
     if (!appState.isPainting || !appState.lastPaintPos) return;
     const coords = getCanvasCoords(e);
@@ -1028,26 +909,7 @@ function setupCanvasInteractions() {
     appState.lastPaintPos = { x: coords.x, y: coords.y };
   });
 
-  window.addEventListener('mouseup', (e) => {
-    // End Box Selection Drag
-    if (appState.isSelectingBox && appState.boxStartCanvasPos) {
-      appState.isSelectingBox = false;
-      const coords = getCanvasCoords(e);
-
-      const minX = Math.round(Math.min(appState.boxStartCanvasPos.x, coords.x));
-      const minY = Math.round(Math.min(appState.boxStartCanvasPos.y, coords.y));
-      const width = Math.round(Math.abs(coords.x - appState.boxStartCanvasPos.x));
-      const height = Math.round(Math.abs(coords.y - appState.boxStartCanvasPos.y));
-
-      if (width > 8 && height > 8) {
-        appState.selectedBoxCoords = { x: minX, y: minY, w: width, h: height };
-        showToast('Kotak seleksi siap! Pilih "Hapus Luar" atau "Hapus Dalam".');
-      } else {
-        clearBoxSelection();
-      }
-      return;
-    }
-
+  window.addEventListener('mouseup', () => {
     // End Brush Painting
     if (!appState.isPainting) return;
     appState.isPainting = false;
@@ -1426,10 +1288,6 @@ function setupEventListeners() {
     els.brushSizeDisplay.textContent = `${appState.brushSize}px`;
     updateBrushCursorIndicator();
   });
-
-  // Box Selection Action Buttons
-  els.btnBoxKeepInside.addEventListener('click', eraseOutsideBox);
-  els.btnBoxEraseInside.addEventListener('click', eraseInsideBox);
 
   // Reset Cutout Button
   els.btnResetCutout.addEventListener('click', resetCutoutToOriginal);

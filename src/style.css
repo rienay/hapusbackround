@@ -944,20 +944,6 @@ button {
 .tool-select-btn.active .tool-select-hint {
   color: #b45309;
 }
-.tool-select-btn.full-width {
-  grid-column: span 2;
-  flex-direction: row;
-  justify-content: flex-start;
-  padding: 10px 14px;
-  gap: 12px;
-  text-align: left;
-}
-.tool-select-col {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
 
 /* Segmented Control */
 .segmented-control {
@@ -1009,52 +995,6 @@ button {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px dashed var(--border-color);
-}
-
-/* Box Select Buttons */
-.box-select-btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-}
-.btn-box-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 12px;
-  border-radius: 12px;
-  border: 1.5px solid #f59e0b;
-  background: #fffbeb;
-  color: #92400e;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.btn-box-action:hover {
-  background: #fef3c7;
-  transform: translateY(-1px);
-}
-.btn-box-action.subtle {
-  border-color: var(--border-color);
-  background: var(--bg-app);
-  color: var(--text-muted);
-}
-.btn-box-action.subtle:hover {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #dc2626;
-}
-
-/* Selection Box Overlay */
-.box-select-overlay {
-  position: absolute;
-  border: 2px dashed #f59e0b;
-  background: rgba(245, 158, 11, 0.15);
-  pointer-events: none;
-  z-index: 25;
 }
 
 /* Fields & Sliders inside Side Card */
