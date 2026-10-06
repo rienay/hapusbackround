@@ -18,7 +18,7 @@ const appState = {
   // Cutout Methods State (4 Tools: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan)
   cutoutMode: 'color-wand', // 'color-wand' | 'restore-wand' | 'erase' | 'restore'
   brushSize: 30,
-  colorTolerance: 15,
+  colorTolerance: 25,
   isContiguousColor: true,
   restoreTolerance: 25,
   isContiguousRestore: true,
@@ -668,7 +668,7 @@ function cleanStrayArtifacts(canvas, options = {}) {
   return cleanedCount;
 }
 
-function healObjectHoles(canvas, originalCanvas, maxHoleSize = 250) {
+function healObjectHoles(canvas, originalCanvas, maxHoleSize = 12) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const origCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
   const w = canvas.width;
@@ -678,7 +678,7 @@ function healObjectHoles(canvas, originalCanvas, maxHoleSize = 250) {
   const data = imgData.data;
   const origData = origCtx.getImageData(0, 0, w, h).data;
 
-  // Find transparent pockets (alpha < 120) completely enclosed inside opaque regions (punctured holes)
+  // Temukan hanya lubang jarum kecil (pinhole <= 12px) yang tidak sengaja bocor di dalam objek solid
   const visited = new Uint8Array(w * h);
   let healedCount = 0;
 
@@ -723,17 +723,23 @@ function healObjectHoles(canvas, originalCanvas, maxHoleSize = 250) {
       }
 
       const pixelCount = component.length / 2;
-      // If it doesn't touch canvas borders and is smaller than maxHoleSize, it's an accidental hole inside an object!
+      // Hanya pulihkan lubang jarum mikroskopis; JANGAN PERNAH pulihkan warna putih/latar kembali ke lubang huruf
       if (!touchesBorder && pixelCount <= maxHoleSize) {
         for (let k = 0; k < component.length; k += 2) {
           const hx = component[k];
           const hy = component[k + 1];
           const hIdx = (hy * w + hx) * 4;
-          data[hIdx] = origData[hIdx];
-          data[hIdx + 1] = origData[hIdx + 1];
-          data[hIdx + 2] = origData[hIdx + 2];
-          data[hIdx + 3] = origData[hIdx + 3];
-          healedCount++;
+          const or = origData[hIdx];
+          const og = origData[hIdx + 1];
+          const ob = origData[hIdx + 2];
+          const isLightBg = (or > 215 && og > 215 && ob > 215);
+          if (!isLightBg) {
+            data[hIdx] = or;
+            data[hIdx + 1] = og;
+            data[hIdx + 2] = ob;
+            data[hIdx + 3] = origData[hIdx + 3];
+            healedCount++;
+          }
         }
       }
     }
@@ -743,15 +749,70 @@ function healObjectHoles(canvas, originalCanvas, maxHoleSize = 250) {
   return healedCount;
 }
 
+/* Pembersih Halo Tepi & De-kontaminasi Warna (Menghilangkan garis putih di sekitar outline) */
+function defringeEdges(canvas, targetR = 255, targetG = 255, targetB = 255) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const w = canvas.width;
+  const h = canvas.height;
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const a = data[idx + 3];
+      if (a === 0) continue;
+
+      let isBorder = false;
+      if (x === 0 || x === w - 1 || y === 0 || y === h - 1) {
+        isBorder = true;
+      } else {
+        if (data[((y - 1) * w + x) * 4 + 3] === 0 ||
+            data[((y + 1) * w + x) * 4 + 3] === 0 ||
+            data[(y * w + (x - 1)) * 4 + 3] === 0 ||
+            data[(y * w + (x + 1)) * 4 + 3] === 0) {
+          isBorder = true;
+        }
+      }
+
+      if (isBorder) {
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const dist = Math.hypot(r - targetR, g - targetG, b - targetB);
+
+        // Jika piksel tepi hampir sama dengan warna background (sisa halo putih)
+        if (dist < 75) {
+          data[idx + 3] = 0; // Hapus halo kotor seketika
+        } else if (dist < 155) {
+          // De-kontaminasi warna tepi: buang cahaya putih background agar warna outline tetap solid
+          const factor = (dist - 75) / 80;
+          data[idx + 3] = Math.min(a, Math.round(255 * factor));
+          const newAlpha = data[idx + 3] / 255;
+          if (newAlpha > 0.08) {
+            data[idx] = Math.max(0, Math.min(255, Math.round((r - (1 - newAlpha) * targetR) / newAlpha)));
+            data[idx + 1] = Math.max(0, Math.min(255, Math.round((g - (1 - newAlpha) * targetG) / newAlpha)));
+            data[idx + 2] = Math.max(0, Math.min(255, Math.round((b - (1 - newAlpha) * targetB) / newAlpha)));
+          }
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+
 function tidyImageComplete() {
   const item = getActiveItem();
   if (!item) return;
 
   const canvas = els.brushCanvas;
-  // 1. Heal punctured holes inside letters/objects from pristine original
-  const healed = healObjectHoles(canvas, item.originalCanvas, 350);
+  // 1. Defringe edges untuk hilangkan halo putih di sekitar tepi objek
+  defringeEdges(canvas, 255, 255, 255);
   // 2. Clear isolated stray dots and floating specks in background
   const cleaned = cleanStrayArtifacts(canvas, { thresholdAlpha: 30 });
+  // 3. Heal tiny pinholes
+  const healed = healObjectHoles(canvas, item.originalCanvas, 12);
 
   // Sync to workingCanvas
   const workCtx = item.workingCanvas.getContext('2d');
@@ -764,15 +825,11 @@ function tidyImageComplete() {
   item.redoStack = [];
 
   updateActiveThumb();
-  if (healed > 0 || cleaned > 0) {
-    showToast(`✨ Gambar rapi! ${healed.toLocaleString()} lubang ditambal & ${cleaned.toLocaleString()} titik sisa dibersihkan.`);
-  } else {
-    showToast('✨ Gambar sudah rapi dan bersih.');
-  }
+  showToast('✨ Gambar rapi! Halo putih dibersihkan & tepi outline dihaluskan.');
 }
 
 /* ==========================================================================
-   ALAT 1: Tembak Warna (Color Wand / 1-Klik Titik Presisi & Halus)
+   ALAT 1: Tembak Warna (Color Wand / 1-Klik Presisi, Anti-Halo, & Lubang Huruf)
    ========================================================================== */
 function shootColor(ix, iy) {
   const item = getActiveItem();
@@ -808,82 +865,124 @@ function shootColor(ix, iy) {
     return Math.sqrt((((512 + rmean) * dr * dr) >> 8) + 4 * dg * dg + (((767 - rmean) * db * db) >> 8));
   }
 
-  // Tolerance thresholds
-  const maxDist = (appState.colorTolerance / 100) * 360;
-  const featherDist = maxDist * 1.25; // Soft anti-alias edge falloff zone
+  // Toleransi adaptif yang presisi dan tajam
+  const tolFactor = Math.max(0.18, appState.colorTolerance / 100);
+  const maxDist = tolFactor * 390;
+  const featherDist = maxDist * 1.38;
 
   let erasedCount = 0;
+  const visited = new Uint8Array(w * h);
 
-  if (appState.isContiguousColor) {
-    // Smart Contiguous Flood Fill (BFS) with Edge Barrier
-    const visited = new Uint8Array(w * h);
-    const queue = [ix, iy];
-    visited[iy * w + ix] = 1;
-    let head = 0;
+  // 1. Flood Fill Utama dari Titik Klik (Menghapus seluruh latar luar)
+  const queue = [ix, iy];
+  visited[iy * w + ix] = 1;
+  let head = 0;
 
-    while (head < queue.length) {
-      const cx = queue[head++];
-      const cy = queue[head++];
-      const idx = (cy * w + cx) * 4;
+  while (head < queue.length) {
+    const cx = queue[head++];
+    const cy = queue[head++];
+    const idx = (cy * w + cx) * 4;
 
-      if (data[idx + 3] > 0) {
-        data[idx + 3] = 0;
-        erasedCount++;
-      }
+    if (data[idx + 3] > 0) {
+      data[idx + 3] = 0;
+      erasedCount++;
+    }
 
-      const neighbors = [
-        [cx + 1, cy],
-        [cx - 1, cy],
-        [cx, cy + 1],
-        [cx, cy - 1]
-      ];
+    const neighbors = [
+      [cx + 1, cy],
+      [cx - 1, cy],
+      [cx, cy + 1],
+      [cx, cy - 1]
+    ];
 
-      for (let i = 0; i < 4; i++) {
-        const nx = neighbors[i][0];
-        const ny = neighbors[i][1];
-        if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-          const nPos = ny * w + nx;
-          if (!visited[nPos]) {
-            visited[nPos] = 1;
-            const nIdx = nPos * 4;
-            const r = data[nIdx];
-            const g = data[nIdx + 1];
-            const b = data[nIdx + 2];
-            const a = data[nIdx + 3];
+    for (let i = 0; i < 4; i++) {
+      const nx = neighbors[i][0];
+      const ny = neighbors[i][1];
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+        const nPos = ny * w + nx;
+        if (!visited[nPos]) {
+          visited[nPos] = 1;
+          const nIdx = nPos * 4;
+          const r = data[nIdx];
+          const g = data[nIdx + 1];
+          const b = data[nIdx + 2];
+          const a = data[nIdx + 3];
 
-            if (a > 0) {
-              // Edge barrier: prevent crossing strong contrast outlines
-              const stepDiff = Math.abs(r - data[idx]) + Math.abs(g - data[idx + 1]) + Math.abs(b - data[idx + 2]);
-              if (stepDiff > 115) {
-                continue;
-              }
-
-              const dist = calcColorDist(r, g, b);
-              if (dist <= maxDist) {
-                queue.push(nx, ny);
-              } else if (dist <= featherDist) {
-                // Soft edge transition (only soften alpha, never tint RGB black!)
-                const factor = (dist - maxDist) / (featherDist - maxDist);
-                data[nIdx + 3] = Math.min(data[nIdx + 3], Math.round(255 * factor));
-              }
+          if (a > 0) {
+            const dist = calcColorDist(r, g, b);
+            if (dist <= maxDist) {
+              queue.push(nx, ny);
+            } else if (dist <= featherDist) {
+              // Unblend cahaya background dari tepi gambar (menghilangkan halo putih)
+              const alpha = (dist - maxDist) / (featherDist - maxDist);
+              data[nIdx] = Math.max(0, Math.min(255, Math.round((r - (1 - alpha) * targetR) / alpha)));
+              data[nIdx + 1] = Math.max(0, Math.min(255, Math.round((g - (1 - alpha) * targetG) / alpha)));
+              data[nIdx + 2] = Math.max(0, Math.min(255, Math.round((b - (1 - alpha) * targetB) / alpha)));
+              data[nIdx + 3] = Math.min(a, Math.round(255 * alpha));
             }
           }
         }
       }
     }
-  } else {
-    // Global Color Erase: Erase matching pixels
-    const totalPixels = w * h;
-    for (let i = 0; i < totalPixels; i++) {
-      const idx = i * 4;
-      if (data[idx + 3] > 0) {
-        const dist = calcColorDist(data[idx], data[idx + 1], data[idx + 2]);
-        if (dist <= maxDist) {
-          data[idx + 3] = 0;
-          erasedCount++;
-        } else if (dist <= featherDist) {
-          const factor = (dist - maxDist) / (featherDist - maxDist);
-          data[idx + 3] = Math.min(data[idx + 3], Math.round(255 * factor));
+  }
+
+  // 2. Pembersihan Otomatis Lubang Huruf (P, D, D, O, A, B, dsb)
+  // Menemukan kantong warna latar yang terkurung outline huruf
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const pos = y * w + x;
+      const idx = pos * 4;
+
+      if (visited[pos] || data[idx + 3] === 0) continue;
+
+      const dist = calcColorDist(data[idx], data[idx + 1], data[idx + 2]);
+      if (dist <= maxDist) {
+        const pocket = [x, y];
+        visited[pos] = 1;
+        let pHead = 0;
+        let touchesBorder = false;
+
+        while (pHead < pocket.length) {
+          const px = pocket[pHead++];
+          const py = pocket[pHead++];
+
+          if (px <= 1 || px >= w - 2 || py <= 1 || py >= h - 2) {
+            touchesBorder = true;
+          }
+
+          const pNeighbors = [
+            [px + 1, py],
+            [px - 1, py],
+            [px, py + 1],
+            [px, py - 1]
+          ];
+
+          for (let i = 0; i < 4; i++) {
+            const nx = pNeighbors[i][0];
+            const ny = pNeighbors[i][1];
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+              const nPos = ny * w + nx;
+              if (!visited[nPos] && data[nPos * 4 + 3] > 0) {
+                const nDist = calcColorDist(data[nPos * 4], data[nPos * 4 + 1], data[nPos * 4 + 2]);
+                if (nDist <= maxDist) {
+                  visited[nPos] = 1;
+                  pocket.push(nx, ny);
+                }
+              }
+            }
+          }
+        }
+
+        const pocketSize = pocket.length / 2;
+        // Jika kantong terkurung oleh outline huruf & memiliki warna latar putih
+        if (!touchesBorder && pocketSize >= 15 && pocketSize <= 28000) {
+          for (let k = 0; k < pocket.length; k += 2) {
+            const hx = pocket[k];
+            const hy = pocket[k + 1];
+            const hIdx = (hy * w + hx) * 4;
+            data[hIdx + 3] = 0;
+            erasedCount++;
+          }
         }
       }
     }
@@ -891,14 +990,15 @@ function shootColor(ix, iy) {
 
   ctx.putImageData(imgData, 0, 0);
 
-  // Auto protect holes inside objects if enabled
-  if (appState.protectHoles) {
-    healObjectHoles(canvas, item.originalCanvas, 150);
-  }
+  // 3. Post-Process: Bersihkan halo putih di tepi seluruh garis
+  defringeEdges(canvas, targetR, targetG, targetB);
 
-  // Auto despeckle / clean stray dots in background if enabled
-  if (appState.autoDespeckle) {
-    cleanStrayArtifacts(canvas, { thresholdAlpha: 20 });
+  // 4. Bersihkan titik-titik kotor sisa kompresi
+  cleanStrayArtifacts(canvas, { thresholdAlpha: 25 });
+
+  // 5. Lindungi lubang jarum mikroskopis di dalam objek
+  if (appState.protectHoles) {
+    healObjectHoles(canvas, item.originalCanvas, 12);
   }
 
   // Sync to workingCanvas
@@ -911,7 +1011,7 @@ function shootColor(ix, iy) {
   item.redoStack = [];
 
   updateActiveThumb();
-  showToast(`🎯 Latar berhasil dihapus bersih! (${erasedCount.toLocaleString()} px)`);
+  showToast(`🎯 Latar & lubang huruf bersih tanpa bercak putih! (${erasedCount.toLocaleString()} px)`);
 }
 
 /* ==========================================================================
