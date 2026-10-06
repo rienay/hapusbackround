@@ -282,9 +282,10 @@ async function processFiles(files) {
     showScreen('studio');
     renderGalleryTray();
     loadActiveItemIntoStudio();
-    // Open cutout panel directly so user immediately has precision cutout tools
+    // Langsung buka panel Hapus Background dan aktifkan Tembak Warna 1-klik otomatis
     openToolPanel('panel-cutout');
-    showToast('✨ Foto siap! Pilih alat potong presisi untuk hapus background.');
+    setCutoutMode('color-wand');
+    showToast('✨ Foto siap! Klik bagian background untuk langsung menghapus warna.');
   }
 }
 
@@ -308,6 +309,8 @@ function renderGalleryTray() {
       appState.activeIndex = idx;
       renderGalleryTray();
       loadActiveItemIntoStudio();
+      openToolPanel('panel-cutout');
+      setCutoutMode('color-wand');
     });
 
     els.galleryThumbsList.appendChild(thumb);
@@ -332,6 +335,10 @@ function getActiveItem() {
     return appState.items[appState.activeIndex];
   }
   return null;
+}
+
+function clearBoxSelection() {
+  // Safe no-op helper for backwards compatibility
 }
 
 function loadActiveItemIntoStudio() {
@@ -1666,8 +1673,13 @@ function setupEventListeners() {
   // 2. Navigation
   els.brandLogoBtn.addEventListener('click', () => showScreen('upload'));
   els.navBtnUpload.addEventListener('click', () => {
-    if (appState.items.length > 0) showScreen('studio');
-    else showScreen('upload');
+    if (appState.items.length > 0) {
+      showScreen('studio');
+      openToolPanel('panel-cutout');
+      setCutoutMode('color-wand');
+    } else {
+      showScreen('upload');
+    }
   });
   els.navBtnBatch.addEventListener('click', () => {
     els.mainFileInput.click();
