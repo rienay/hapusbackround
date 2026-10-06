@@ -2,563 +2,391 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z'/></svg>" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-4a1 1 0 0 1-2 0V7a1 1 0 0 1 2 0z'/></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ClearCut AI — Hapus Background Foto 100% Gratis & Otomatis di Browser</title>
-    <meta name="description" content="Aplikasi hapus background foto instan berbasis AI. Berjalan 100% langsung di browser pengguna tanpa kirim data ke server. Bebas kuota, tanpa watermark, dan privasi terjamin." />
+    <title>Hapus Background Foto Otomatis & Gratis — In-Browser AI</title>
+    <meta name="description" content="Aplikasi hapus background foto instan berbasis AI mirip remove.bg. Berjalan 100% di browser tanpa Canva, tanpa kirim data ke server. 100% gratis & privat." />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Cross-Origin Isolation Service Worker for WebAssembly SharedArrayBuffer -->
+    <!-- Cross-Origin Isolation Service Worker -->
     <script src="/coi-serviceworker.js"></script>
   </head>
   <body>
-    <div id="app" class="app-container">
-      <!-- Header Navigation -->
-      <header class="app-header">
-        <div class="logo-group">
-          <div class="logo-icon-wrap">
-            <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
-              <path d="M5 3v4"/>
-              <path d="M3 5h4"/>
-            </svg>
+    <div id="app" class="app-shell">
+      <!-- Navbar -->
+      <header class="navbar">
+        <div class="nav-container">
+          <div class="nav-left">
+            <div class="brand-logo" id="brand-logo-btn">
+              <div class="brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <span class="brand-name">remove<span class="brand-dot">.</span><span class="brand-ext">ai</span></span>
+            </div>
+            <nav class="nav-links">
+              <button class="nav-link-btn active" id="nav-btn-upload">Unggahan</button>
+              <button class="nav-link-btn" id="nav-btn-batch">Pengeditan Banyak Gambar</button>
+            </nav>
           </div>
-          <div class="logo-text">
-            <span class="logo-title">ClearCut <span class="gradient-text">AI</span></span>
-            <span class="logo-subtitle">In-Browser AI Studio</span>
-          </div>
-        </div>
 
-        <div class="header-badges">
-          <div class="status-pill privacy-pill" title="Semua proses diproses di browser Anda. Gambar tidak dikirim ke server.">
-            <span class="status-dot green"></span>
-            <span>100% Privat di Browser</span>
+          <div class="nav-right">
+            <div class="privacy-tag" title="Semua proses AI berjalan langsung di memori browser Anda">
+              <span class="dot-live"></span>
+              <span>100% Privat di Browser</span>
+            </div>
+            <button class="btn-theme-toggle" id="btn-theme-toggle" title="Ganti Tema">
+              <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
           </div>
-          <div class="status-pill free-pill">
-            <span class="sparkle-mini">✨</span>
-            <span>Gratis & Unlimited</span>
-          </div>
-        </div>
-
-        <div class="header-actions">
-          <button id="btn-header-new" class="btn-subtle hidden" title="Pilih foto baru (Esc)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-            <span>Foto Baru</span>
-          </button>
-          <a href="#how-it-works" class="nav-link" id="nav-info-btn">Panduan</a>
         </div>
       </header>
 
-      <!-- Main Content Area -->
-      <main class="main-content">
-        <!-- VIEW 1: UPLOAD / IDLE VIEW -->
-        <section id="view-upload" class="view-section active">
-          <div class="hero-section">
-            <div class="hero-badge">
-              <span class="ai-chip">Model AI v1.7</span>
-              <span>Penghapusan Latar Belakang Cerdas & Presisi Tinggi</span>
-            </div>
-            <h1 class="hero-title">
-              Hapus Background Foto <br />
-              <span class="gradient-text">Otomatis & Gratis</span> Langsung di Browser
-            </h1>
-            <p class="hero-desc">
-              Potong subjek orang, produk, pakaian, atau hewan peliharaan secara instan.
-              Ditenagai AI WebAssembly lokal tanpa perlu upload ke cloud, menjaga privasi foto Anda tetap aman 100%.
-            </p>
+      <!-- Main Studio Container -->
+      <main class="studio-main">
+        <!-- 1. EMPTY / UPLOAD STATE -->
+        <section id="upload-screen" class="screen-view active">
+          <div class="upload-hero">
+            <h1 class="upload-headline">Hapus Latar Belakang Gambar</h1>
+            <p class="upload-subheadline">100% otomatis, tanpa watermark, dan gratis langsung di browser Anda</p>
           </div>
 
-          <!-- Upload Drop Zone Card -->
-          <div class="upload-card-wrapper">
-            <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Area drag and drop upload gambar">
-              <input type="file" id="file-input" accept="image/png, image/jpeg, image/webp" class="file-input-hidden" />
+          <div class="upload-box-wrapper">
+            <div class="upload-box" id="drop-area">
+              <input type="file" id="main-file-input" accept="image/png, image/jpeg, image/webp" multiple class="sr-only" />
               
-              <div class="drop-zone-glow"></div>
-              
-              <div class="drop-zone-content">
-                <div class="upload-icon-circle">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
+              <div class="upload-cta">
+                <button type="button" class="btn-cta-blue" id="btn-browse-file">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                   </svg>
-                </div>
-                
-                <h3 class="upload-title">Tarik & Lepas Foto ke Sini</h3>
-                <p class="upload-subtitle">atau klik untuk memilih file dari komputer / HP Anda</p>
-                
-                <button type="button" class="btn-primary upload-btn" id="btn-select-file">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  <span>Pilih Gambar</span>
+                  <span>Unggah Gambar</span>
                 </button>
-
-                <div class="upload-hints">
-                  <span class="hint-item"><kbd>Ctrl</kbd> + <kbd>V</kbd> untuk Paste langsung</span>
-                  <span class="hint-dot">•</span>
-                  <span class="hint-item">PNG, JPG, WEBP hingga 25MB</span>
-                </div>
+                <div class="upload-or-text">atau seret & letakkan file di sini</div>
+                <div class="upload-kbd-hint">Bisa langsung paste dengan <kbd>Ctrl</kbd> + <kbd>V</kbd></div>
               </div>
             </div>
 
-            <!-- Quick Samples Grid -->
-            <div class="samples-container">
-              <span class="samples-label">Atau coba sampel foto siap uji:</span>
-              <div class="samples-grid">
-                <button type="button" class="sample-card" data-sample="/samples/portrait.jpg" id="sample-portrait-btn">
-                  <img src="/samples/portrait.jpg" alt="Sampel Potret Orang" loading="lazy" />
-                  <div class="sample-info">
-                    <span class="sample-name">Potret Orang</span>
-                    <span class="sample-tag">Detail Rambut</span>
-                  </div>
+            <!-- Sample Images Row -->
+            <div class="sample-tray">
+              <span class="sample-title">Tidak ada gambar? Coba salah satu ini:</span>
+              <div class="sample-items">
+                <button type="button" class="sample-pill-btn" data-src="/samples/portrait.jpg">
+                  <img src="/samples/portrait.jpg" alt="Potret" />
+                  <span>Potret Orang</span>
                 </button>
-
-                <button type="button" class="sample-card" data-sample="/samples/sneaker.jpg" id="sample-sneaker-btn">
-                  <img src="/samples/sneaker.jpg" alt="Sampel Produk Sepatu" loading="lazy" />
-                  <div class="sample-info">
-                    <span class="sample-name">Foto Produk</span>
-                    <span class="sample-tag">Komersial / E-Commerce</span>
-                  </div>
+                <button type="button" class="sample-pill-btn" data-src="/samples/sneaker.jpg">
+                  <img src="/samples/sneaker.jpg" alt="Produk Sepatu" />
+                  <span>Foto Produk</span>
                 </button>
-
-                <button type="button" class="sample-card" data-sample="/samples/cat.jpg" id="sample-cat-btn">
-                  <img src="/samples/cat.jpg" alt="Sampel Kucing Lucu" loading="lazy" />
-                  <div class="sample-info">
-                    <span class="sample-name">Hewan Peliharaan</span>
-                    <span class="sample-tag">Tekstur Bulu Halus</span>
-                  </div>
+                <button type="button" class="sample-pill-btn" data-src="/samples/cat.jpg">
+                  <img src="/samples/cat.jpg" alt="Kucing" />
+                  <span>Hewan Lucu</span>
                 </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Feature Cards Section -->
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feature-icon-box cyan">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </div>
-              <h4>Privasi 100% Terjaga</h4>
-              <p>Gambar Anda tidak pernah diunggah ke server mana pun. Semua inferensi AI berjalan di memori browser Anda.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon-box purple">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </div>
-              <h4>Presisi Tepi AI Sub-Piksel</h4>
-              <p>Mendeteksi lekukan rumit, helai rambut, dan tepian transparan dengan neural network ISNet termutakhir.</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon-box amber">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              </div>
-              <h4>Studio Kustomisasi Lengkap</h4>
-              <p>Ganti background dengan warna solid, gradien modern, gambar lain, atau tambahkan bayangan produk (drop shadow).</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- VIEW 2: PROCESSING / PROGRESS VIEW -->
-        <section id="view-processing" class="view-section">
-          <div class="processing-card">
-            <div class="processing-preview-wrap">
-              <img id="processing-preview-img" src="" alt="Foto yang sedang diproses" />
-              <div class="scanline"></div>
-              <div class="pulse-overlay"></div>
-            </div>
-
-            <div class="processing-details">
-              <div class="spinner-ai">
-                <div class="spinner-ring"></div>
-                <div class="spinner-core">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-                </div>
-              </div>
-
-              <h2 id="processing-status-title" class="processing-title">AI Sedang Bekerja...</h2>
-              <p id="processing-status-sub" class="processing-sub">Memuat model neural network ke WebAssembly</p>
-
-              <!-- Progress Bar -->
-              <div class="progress-bar-container">
-                <div class="progress-bar-track">
-                  <div id="processing-progress-fill" class="progress-bar-fill" style="width: 15%;"></div>
-                </div>
-                <div class="progress-stats">
-                  <span id="progress-phase-label">Mengunduh Model (Pertama kali)</span>
-                  <span id="progress-percentage-label">15%</span>
-                </div>
-              </div>
-
-              <div class="processing-tip">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <span>Unduhan model disimpan di cache browser Anda, pemrosesan berikutnya akan jauh lebih kilat!</span>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- VIEW 3: RESULT STUDIO VIEW -->
-        <section id="view-studio" class="view-section">
-          <div class="studio-layout">
-            <!-- Left / Center: Interactive Canvas & Comparison Stage -->
-            <div class="studio-canvas-area">
-              <!-- Top Canvas Controls -->
-              <div class="canvas-topbar">
-                <div class="view-modes-group">
-                  <button type="button" class="btn-tool active" id="mode-split-btn" title="Slider Perbandingan Sebelum/Sesudah">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="3" x2="12" y2="21"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                    <span>Split Slider</span>
-                  </button>
-                  <button type="button" class="btn-tool" id="mode-side-btn" title="Tampilan Berdampingan">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
-                    <span>Side-by-Side</span>
-                  </button>
-                  <button type="button" class="btn-tool" id="mode-result-btn" title="Tampilan Hasil Penuh">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                    <span>Hasil Bersih</span>
-                  </button>
-                </div>
+        <!-- 2. PROCESSING STATE -->
+        <section id="processing-screen" class="screen-view">
+          <div class="processing-box">
+            <div class="processing-loader-ring"></div>
+            <h3 class="processing-text" id="proc-status-title">Menghapus latar belakang...</h3>
+            <p class="processing-subtext" id="proc-status-detail">Memproses AI di WebAssembly browser</p>
+            <div class="proc-progress-bar">
+              <div class="proc-progress-track" id="proc-progress-track"></div>
+            </div>
+          </div>
+        </section>
 
-                <div class="canvas-quick-actions">
-                  <button type="button" class="btn-tool" id="btn-peek-original" title="Tahan spasi atau klik untuk intip foto asli">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <span>Intip Asli (Tahan)</span>
-                  </button>
-                  <button type="button" class="btn-tool" id="btn-fit-screen" title="Reset Zoom / Pas Layar">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                    <span>Fit</span>
-                  </button>
-                </div>
-              </div>
+        <!-- 3. REMOVE.BG-STYLE STUDIO CANVAS STATE -->
+        <section id="studio-screen" class="screen-view">
+          <!-- Top Floating Action Toolbar (Mirip remove.bg di screenshot) -->
+          <div class="top-action-bar-container">
+            <div class="top-action-bar">
+              <!-- Tool 1: Potongan (Eraser / Restore) -->
+              <button type="button" class="action-tab-btn" data-panel="panel-cutout" id="btn-tool-cutout">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m14.5 4-2.5 5 4 2 2.5-5zM6 16l6-6M3 21l3-3M3 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                </svg>
+                <span>Potongan</span>
+              </button>
 
-              <!-- Canvas Stage Viewports -->
-              <div class="canvas-stage-wrapper" id="canvas-stage-container">
-                <!-- Mode A: Interactive Split Comparison Slider -->
-                <div class="comparison-slider" id="comparison-slider-element">
-                  <!-- Custom Background Layer (Color / Gradient / Photo) -->
-                  <div class="slider-bg-backdrop" id="slider-custom-backdrop"></div>
+              <!-- Tool 2: Latar Belakang -->
+              <button type="button" class="action-tab-btn" data-panel="panel-background" id="btn-tool-background">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <span>Latar Belakang</span>
+              </button>
 
-                  <!-- Transparent Checkerboard Pattern -->
-                  <div class="checkerboard-pattern" id="slider-checkerboard"></div>
+              <!-- Tool 3: Efek (Shadow & Glow) -->
+              <button type="button" class="action-tab-btn" data-panel="panel-effects" id="btn-tool-effects">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>
+                </svg>
+                <span>Efek</span>
+              </button>
 
-                  <!-- Cutout Foreground Layer (The AI cut subject) -->
-                  <div class="subject-layer" id="subject-layer-wrapper">
-                    <!-- Dynamic Shadow Filter applied here -->
-                    <img id="cutout-img" src="" alt="Hasil Potongan AI" class="interactive-img" />
-                    <!-- Touch-up Canvas Layer for Erase/Restore manual painting -->
-                    <canvas id="touchup-canvas" class="touchup-canvas hidden"></canvas>
-                  </div>
+              <!-- Tool 4: Sesuaikan (Brightness, Contrast, Blur) -->
+              <button type="button" class="action-tab-btn" data-panel="panel-adjust" id="btn-tool-adjust">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                </svg>
+                <span>Sesuaikan</span>
+              </button>
 
-                  <!-- Before / Original Overlay Layer (Clipped by slider handle) -->
-                  <div class="original-clip-layer" id="original-clip-wrapper">
-                    <img id="original-img" src="" alt="Foto Asli Sebelum Dihapus" class="interactive-img" />
-                    <span class="layer-badge before-badge">Sebelum</span>
-                  </div>
+              <div class="action-bar-divider"></div>
 
-                  <span class="layer-badge after-badge">Sesudah</span>
+              <!-- Tool 5: Split Comparison Toggle -->
+              <button type="button" class="action-icon-btn" id="btn-toggle-compare" title="Bandingkan Sebelum / Sesudah">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/>
+                </svg>
+              </button>
 
-                  <!-- Draggable Split Slider Handle -->
-                  <div class="slider-divider" id="slider-divider-line">
-                    <div class="slider-thumb" id="slider-thumb-handle" title="Geser ke kiri / kanan untuk membandingkan">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/><polyline points="9 18 3 12 9 6"/></svg>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/><polyline points="15 18 21 12 15 6"/></svg>
+              <!-- Tool 6: Undo & Redo -->
+              <button type="button" class="action-icon-btn" id="btn-undo" title="Urungkan (Ctrl+Z)">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                </svg>
+              </button>
+              <button type="button" class="action-icon-btn" id="btn-redo" title="Ulangi (Ctrl+Y)">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>
+                </svg>
+              </button>
+
+              <!-- Tool 7: Unduh (Download Button with Dropdown) -->
+              <div class="download-split-dropdown">
+                <button type="button" class="btn-download-primary" id="btn-main-download">
+                  <span>Unduh</span>
+                </button>
+                <button type="button" class="btn-download-arrow" id="btn-download-options-toggle" title="Opsi Format Unduhan">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="download-menu hidden" id="download-dropdown-menu">
+                  <button type="button" class="menu-item" data-action="dl-png">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <div>
+                      <div class="menu-item-title">Unduh PNG (Transparan HD)</div>
+                      <div class="menu-item-desc">Resolusi penuh tanpa latar</div>
                     </div>
-                  </div>
-                </div>
-
-                <!-- Mode B: Side by Side Grid View (Hidden by default) -->
-                <div class="side-by-side-grid hidden" id="side-by-side-wrapper">
-                  <div class="side-card">
-                    <div class="side-card-header">Foto Asli</div>
-                    <div class="side-card-body">
-                      <img id="side-original-img" src="" alt="Original" />
+                  </button>
+                  <button type="button" class="menu-item" data-action="dl-jpg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <div>
+                      <div class="menu-item-title">Unduh JPG (Dengan Latar)</div>
+                      <div class="menu-item-desc">Sesuai warna/gambar latar pilihan</div>
                     </div>
-                  </div>
-                  <div class="side-card">
-                    <div class="side-card-header">Latar Terhapus</div>
-                    <div class="side-card-body checkerboard-pattern" id="side-result-container">
-                      <div class="side-custom-bg" id="side-custom-bg"></div>
-                      <img id="side-result-img" src="" alt="Hasil" />
+                  </button>
+                  <button type="button" class="menu-item" data-action="copy">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <div>
+                      <div class="menu-item-title">Salin ke Clipboard</div>
+                      <div class="menu-item-desc">Bisa langsung ditempel (Ctrl+V)</div>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Canvas Bottom Stats & Feedback -->
-              <div class="canvas-bottombar">
-                <div class="meta-tag">
-                  <span class="meta-label">Ukuran Asli:</span>
-                  <span id="img-dim-label" class="meta-val">1920 &times; 1080 px</span>
-                </div>
-                <div class="meta-tag">
-                  <span class="meta-label">Format:</span>
-                  <span class="meta-val highlight">PNG Transparan 32-bit</span>
-                </div>
-                <div class="meta-tag">
-                  <span class="meta-label">Waktu Eksekusi:</span>
-                  <span id="execution-time-label" class="meta-val">1.2 dtk</span>
+                  </button>
                 </div>
               </div>
             </div>
 
-            <!-- Right: Studio Customization & Export Inspector -->
-            <aside class="studio-sidebar">
-              <!-- Sidebar Tabs Navigation -->
-              <div class="sidebar-tabs">
-                <button type="button" class="tab-btn active" data-tab="tab-bg" id="tab-btn-bg">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-                  <span>Latar Belakang</span>
-                </button>
-                <button type="button" class="tab-btn" data-tab="tab-shadow" id="tab-btn-shadow">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  <span>Bayangan & Efek</span>
-                </button>
-                <button type="button" class="tab-btn" data-tab="tab-touchup" id="tab-btn-touchup">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94 3 19l2 2 4.06-4.07"/><path d="m14 7 3 3"/></svg>
-                  <span>Kuas Manual</span>
-                </button>
-              </div>
-
-              <!-- Tab Content Panels -->
-              <div class="tab-panels-wrap">
-                <!-- PANEL 1: BACKGROUND CUSTOMIZATION -->
-                <div class="tab-panel active" id="tab-bg">
-                  <div class="control-group">
-                    <label class="control-title">Pilih Gaya Latar Belakang</label>
-                    <div class="bg-type-selector">
-                      <button type="button" class="btn-chip active" data-bg-type="transparent" id="chip-bg-transparent">Transparan</button>
-                      <button type="button" class="btn-chip" data-bg-type="solid" id="chip-bg-solid">Warna Solid</button>
-                      <button type="button" class="btn-chip" data-bg-type="gradient" id="chip-bg-gradient">Gradien</button>
-                      <button type="button" class="btn-chip" data-bg-type="image" id="chip-bg-image">Foto Baru</button>
-                    </div>
-                  </div>
-
-                  <!-- Transparent Preset -->
-                  <div class="bg-sub-panel" id="bg-panel-transparent">
-                    <div class="info-callout">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Hasil akan disimpan sebagai PNG transparan murni, siap digunakan di Canva, Figma, atau website.</span>
-                    </div>
-                  </div>
-
-                  <!-- Solid Color Swatches -->
-                  <div class="bg-sub-panel hidden" id="bg-panel-solid">
-                    <label class="control-subtitle">Warna Populer Studio</label>
-                    <div class="color-palette">
-                      <button type="button" class="color-swatch active" data-color="#ffffff" style="background: #ffffff;" title="Putih Bersih"></button>
-                      <button type="button" class="color-swatch" data-color="#f3f4f6" style="background: #f3f4f6;" title="Abu Studio"></button>
-                      <button type="button" class="color-swatch" data-color="#09090b" style="background: #09090b;" title="Hitam Pekat"></button>
-                      <button type="button" class="color-swatch" data-color="#3b82f6" style="background: #3b82f6;" title="Biru Paspor / ID"></button>
-                      <button type="button" class="color-swatch" data-color="#ef4444" style="background: #ef4444;" title="Merah Paspor / SKCK"></button>
-                      <button type="button" class="color-swatch" data-color="#10b981" style="background: #10b981;" title="Emerald"></button>
-                      <button type="button" class="color-swatch" data-color="#8b5cf6" style="background: #8b5cf6;" title="Violet"></button>
-                      <button type="button" class="color-swatch" data-color="#f59e0b" style="background: #f59e0b;" title="Warm Amber"></button>
-                      <button type="button" class="color-swatch" data-color="#fce7f3" style="background: #fce7f3;" title="Pastel Pink"></button>
-                      <button type="button" class="color-swatch" data-color="#e0f2fe" style="background: #e0f2fe;" title="Pastel Sky"></button>
-                      <label class="color-swatch custom-picker-swatch" title="Pilih Warna Kustom">
-                        <input type="color" id="custom-solid-color-picker" value="#6366f1" />
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                      </label>
-                    </div>
-                  </div>
-
-                  <!-- Modern Gradient Swatches -->
-                  <div class="bg-sub-panel hidden" id="bg-panel-gradient">
-                    <label class="control-subtitle">Gradien Modern</label>
-                    <div class="gradient-palette">
-                      <button type="button" class="gradient-swatch active" data-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" title="Deep Indigo"></button>
-                      <button type="button" class="gradient-swatch" data-gradient="linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);" title="Soft Peach"></button>
-                      <button type="button" class="gradient-swatch" data-gradient="linear-gradient(135deg, #0ba360 0%, #3cba92 100%)" style="background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);" title="Fresh Mint"></button>
-                      <button type="button" class="gradient-swatch" data-gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);" title="Sunset Glow"></button>
-                      <button type="button" class="gradient-swatch" data-gradient="linear-gradient(135deg, #2b5876 0%, #4e4376 100%)" style="background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);" title="Midnight Velvet"></button>
-                      <button type="button" class="gradient-swatch" data-gradient="linear-gradient(135deg, #141e30 0%, #243b55 100%)" style="background: linear-gradient(135deg, #141e30 0%, #243b55 100%);" title="Dark Steel"></button>
-                    </div>
-                  </div>
-
-                  <!-- Custom Background Image Upload -->
-                  <div class="bg-sub-panel hidden" id="bg-panel-image">
-                    <label class="control-subtitle">Unggah Foto Latar Belakang Sendiri</label>
-                    <div class="custom-bg-uploader">
-                      <input type="file" id="custom-bg-file-input" accept="image/*" class="file-input-hidden" />
-                      <button type="button" class="btn-outline-wide" id="btn-upload-custom-bg">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span>Pilih Gambar Latar...</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- PANEL 2: SHADOW & STICKER EFFECTS -->
-                <div class="tab-panel" id="tab-shadow">
-                  <div class="control-group">
-                    <div class="switch-row">
-                      <div>
-                        <span class="switch-label">Drop Shadow (Bayangan Produk)</span>
-                        <span class="switch-hint">Membuat objek terlihat melayang realistis</span>
-                      </div>
-                      <label class="toggle-switch">
-                        <input type="checkbox" id="shadow-toggle" />
-                        <span class="slider round"></span>
-                      </label>
-                    </div>
-
-                    <div id="shadow-controls-body" class="sub-controls-body disabled">
-                      <div class="slider-field">
-                        <div class="slider-header">
-                          <span>Buram / Blur</span>
-                          <span id="shadow-blur-val">20px</span>
-                        </div>
-                        <input type="range" id="shadow-blur" min="0" max="60" value="20" />
-                      </div>
-
-                      <div class="slider-field">
-                        <div class="slider-header">
-                          <span>Jarak Vertikal (Offset Y)</span>
-                          <span id="shadow-offsety-val">15px</span>
-                        </div>
-                        <input type="range" id="shadow-offsety" min="-30" max="50" value="15" />
-                      </div>
-
-                      <div class="slider-field">
-                        <div class="slider-header">
-                          <span>Kepekatan / Opasitas</span>
-                          <span id="shadow-opacity-val">35%</span>
-                        </div>
-                        <input type="range" id="shadow-opacity" min="5" max="100" value="35" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="control-group">
-                    <div class="switch-row">
-                      <div>
-                        <span class="switch-label">Sticker Outline Glow</span>
-                        <span class="switch-hint">Garis tepi putih khas stiker YouTube & WA</span>
-                      </div>
-                      <label class="toggle-switch">
-                        <input type="checkbox" id="outline-toggle" />
-                        <span class="slider round"></span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- PANEL 3: MANUAL TOUCH-UP BRUSH -->
-                <div class="tab-panel" id="tab-touchup">
-                  <div class="control-group">
-                    <label class="control-title">Kuas Edit Manual</label>
-                    <p class="control-hint">Jika AI meninggalkan sedikit noda atau memotong terlalu banyak, rapikan langsung dengan kuas.</p>
-                    
-                    <div class="brush-mode-buttons">
-                      <button type="button" class="btn-tool active" id="btn-brush-erase">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
-                        <span>Hapus (Eraser)</span>
-                      </button>
-                      <button type="button" class="btn-tool" id="btn-brush-restore">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/></svg>
-                        <span>Pulihkan (Restore)</span>
-                      </button>
-                    </div>
-
-                    <div class="slider-field mt-12">
-                      <div class="slider-header">
-                        <span>Ukuran Kuas</span>
-                        <span id="brush-size-val">25px</span>
-                      </div>
-                      <input type="range" id="brush-size" min="5" max="80" value="25" />
-                    </div>
-
-                    <div class="touchup-actions mt-12">
-                      <button type="button" class="btn-subtle" id="btn-brush-undo">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-                        <span>Undo Goresan</span>
-                      </button>
-                      <button type="button" class="btn-subtle" id="btn-brush-reset">
-                        <span>Reset ke AI Awal</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Export & Download Action Center -->
-              <div class="studio-export-footer">
-                <div class="export-format-row">
-                  <label for="export-format-select" class="export-label">Format Unduhan:</label>
-                  <select id="export-format-select" class="custom-select">
-                    <option value="png" selected>PNG (Transparansi Penuh)</option>
-                    <option value="jpeg">JPEG (Kualitas Tinggi)</option>
-                    <option value="webp">WEBP (Web Ringan)</option>
-                  </select>
-                </div>
-
-                <div class="export-buttons-stack">
-                  <button type="button" class="btn-primary btn-large download-btn" id="btn-download-result">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <span>Unduh Gambar HD</span>
-                  </button>
-
-                  <div class="secondary-export-row">
-                    <button type="button" class="btn-outline" id="btn-copy-clipboard" title="Salin langsung ke clipboard untuk dipaste ke Canva/WA/Photoshop">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                      <span>Salin Gambar</span>
+            <!-- POPUP PANEL DRAWER (Muncul tepat di bawah toolbar saat diklik) -->
+            <div class="tool-popover-panel hidden" id="tool-popover">
+              <!-- Panel: Potongan (Kuas Hapus/Pulihkan) -->
+              <div class="popover-content hidden" id="panel-cutout">
+                <div class="popover-row">
+                  <div class="brush-mode-pills">
+                    <button type="button" class="pill-btn active" id="btn-brush-erase-mode">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>
+                      <span>Hapus</span>
                     </button>
-                    
-                    <button type="button" class="btn-outline" id="btn-reset-workspace" title="Mulai ulang dengan gambar baru">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                      <span>Foto Lain</span>
+                    <button type="button" class="pill-btn" id="btn-brush-restore-mode">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/></svg>
+                      <span>Pulihkan</span>
                     </button>
                   </div>
+
+                  <div class="slider-inline-group">
+                    <label>Ukuran Kuas:</label>
+                    <input type="range" id="brush-size-input" min="5" max="80" value="25" />
+                    <span id="brush-size-display">25px</span>
+                  </div>
+
+                  <button type="button" class="btn-text-subtle" id="btn-reset-cutout">Reset ke Awal</button>
                 </div>
               </div>
-            </aside>
-          </div>
-        </section>
 
-        <!-- Informative Guide & FAQ Section -->
-        <section id="how-it-works" class="guide-section">
-          <div class="guide-header">
-            <span class="guide-chip">Teknologi Terkini</span>
-            <h2>Bagaimana Cara Kerjanya?</h2>
-            <p>Tanpa server pihak ketiga, hemat kuota internet, dan 100% aman untuk foto sensitif.</p>
+              <!-- Panel: Latar Belakang -->
+              <div class="popover-content hidden" id="panel-background">
+                <div class="bg-selector-tabs">
+                  <button type="button" class="bg-tab-pill active" data-bg-mode="transparent">Transparan</button>
+                  <button type="button" class="bg-tab-pill" data-bg-mode="blur">Blur Asli</button>
+                  <button type="button" class="bg-tab-pill" data-bg-mode="color">Warna Solid</button>
+                  <button type="button" class="bg-tab-pill" data-bg-mode="gradient">Gradien</button>
+                  <button type="button" class="bg-tab-pill" data-bg-mode="custom-img">Upload Foto</button>
+                </div>
+
+                <!-- Sub-items: Color Swatches -->
+                <div class="bg-sub-strip hidden" id="strip-color">
+                  <div class="swatches-flow">
+                    <button type="button" class="swatch-btn active" data-color="#ffffff" style="background: #ffffff;" title="Putih"></button>
+                    <button type="button" class="swatch-btn" data-color="#f1f5f9" style="background: #f1f5f9;" title="Abu Terang"></button>
+                    <button type="button" class="swatch-btn" data-color="#0f172a" style="background: #0f172a;" title="Hitam Gelap"></button>
+                    <button type="button" class="swatch-btn" data-color="#2563eb" style="background: #2563eb;" title="Biru Paspor"></button>
+                    <button type="button" class="swatch-btn" data-color="#dc2626" style="background: #dc2626;" title="Merah SKCK"></button>
+                    <button type="button" class="swatch-btn" data-color="#16a34a" style="background: #16a34a;" title="Hijau"></button>
+                    <button type="button" class="swatch-btn" data-color="#f59e0b" style="background: #f59e0b;" title="Kuning Amber"></button>
+                    <button type="button" class="swatch-btn" data-color="#ec4899" style="background: #ec4899;" title="Pink"></button>
+                    <label class="swatch-btn swatch-custom-picker" title="Pilih Warna Bebas">
+                      <input type="color" id="native-color-picker" value="#2563eb" />
+                      <span>+</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Sub-items: Gradient Swatches -->
+                <div class="bg-sub-strip hidden" id="strip-gradient">
+                  <div class="swatches-flow">
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #0ba360 0%, #3cba92 100%)" style="background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #141e30 0%, #243b55 100%)" style="background: linear-gradient(135deg, #141e30 0%, #243b55 100%);"></button>
+                  </div>
+                </div>
+
+                <!-- Sub-items: Blur Slider -->
+                <div class="bg-sub-strip hidden" id="strip-blur">
+                  <div class="slider-inline-group">
+                    <label>Tingkat Blur Latar Asli:</label>
+                    <input type="range" id="bg-blur-slider" min="0" max="30" value="12" />
+                    <span id="bg-blur-val">12px</span>
+                  </div>
+                </div>
+
+                <!-- Sub-items: Custom Image Upload -->
+                <div class="bg-sub-strip hidden" id="strip-custom-img">
+                  <input type="file" id="custom-bg-input" accept="image/*" class="sr-only" />
+                  <button type="button" class="btn-subtle-sm" id="btn-pick-custom-bg">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    <span>Pilih Gambar Latar Belakang...</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Panel: Efek (Shadow & Outline) -->
+              <div class="popover-content hidden" id="panel-effects">
+                <div class="popover-row">
+                  <label class="toggle-pill-label">
+                    <input type="checkbox" id="check-shadow" />
+                    <span>Drop Shadow (Bayangan)</span>
+                  </label>
+                  <div class="slider-inline-group" id="shadow-blur-group">
+                    <label>Kelembutan:</label>
+                    <input type="range" id="shadow-blur-range" min="0" max="50" value="20" />
+                  </div>
+                  <div class="slider-inline-group" id="shadow-offset-group">
+                    <label>Jarak:</label>
+                    <input type="range" id="shadow-offset-range" min="0" max="40" value="15" />
+                  </div>
+                  <label class="toggle-pill-label">
+                    <input type="checkbox" id="check-outline" />
+                    <span>Garis Tepi (Stiker)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Panel: Sesuaikan (Brightness & Contrast) -->
+              <div class="popover-content hidden" id="panel-adjust">
+                <div class="popover-row">
+                  <div class="slider-inline-group">
+                    <label>Kecerahan:</label>
+                    <input type="range" id="adj-brightness" min="50" max="150" value="100" />
+                  </div>
+                  <div class="slider-inline-group">
+                    <label>Kontras:</label>
+                    <input type="range" id="adj-contrast" min="50" max="150" value="100" />
+                  </div>
+                  <button type="button" class="btn-text-subtle" id="btn-reset-adjust">Reset</button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="steps-grid">
-            <div class="step-card">
-              <div class="step-number">01</div>
-              <h3>Pilih Foto</h3>
-              <p>Drag file foto atau tekan <kbd>Ctrl+V</kbd>. Gambar hanya dimuat di memori RAM browser Anda.</p>
+          <!-- Central Canvas Stage (Focused Card Viewport) -->
+          <div class="canvas-center-viewport">
+            <div class="canvas-card" id="main-canvas-card">
+              <!-- Custom Backdrop Layer -->
+              <div class="canvas-custom-bg" id="canvas-bg-layer"></div>
+
+              <!-- Blurred Original Background Layer -->
+              <img id="canvas-blur-layer" class="canvas-blur-layer hidden" src="" alt="Latar Asli Blur" />
+
+              <!-- Transparent Checkerboard Pattern -->
+              <div class="canvas-checkerboard" id="canvas-checkerboard"></div>
+
+              <!-- Cutout Foreground Subject Layer -->
+              <div class="canvas-subject-layer" id="canvas-subject-layer">
+                <img id="canvas-cutout-img" src="" alt="Hasil Latar Belakang Terhapus" />
+                <canvas id="brush-canvas" class="brush-canvas hidden"></canvas>
+              </div>
+
+              <!-- Original Overlay (For Split Comparison Slider) -->
+              <div class="canvas-compare-clip hidden" id="canvas-compare-clip">
+                <img id="canvas-original-img" src="" alt="Foto Asli" />
+                <span class="compare-badge badge-orig">Asli</span>
+              </div>
+              <span class="compare-badge badge-clean hidden" id="badge-clean">Terhapus</span>
+
+              <!-- Slider Split Divider Line -->
+              <div class="compare-slider-divider hidden" id="compare-slider-divider">
+                <div class="compare-slider-handle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
             </div>
-            <div class="step-card">
-              <div class="step-number">02</div>
-              <h3>AI Segmentasi Lokal</h3>
-              <p>Model neural network ISNet memindai subjek dengan WebAssembly multi-thread berkecepatan tinggi.</p>
-            </div>
-            <div class="step-card">
-              <div class="step-number">03</div>
-              <h3>Kustomisasi & Simpan</h3>
-              <p>Ganti background, atur bayangan produk, dan unduh hasil PNG beresolusi penuh tanpa watermark.</p>
+          </div>
+
+          <!-- Bottom Multi-Image Gallery Bar (Mirip yang di screenshot: tombol + dan thumbnail aktif) -->
+          <div class="bottom-gallery-bar">
+            <div class="gallery-inner">
+              <!-- Add new image button (+) -->
+              <button type="button" class="gallery-add-btn" id="btn-gallery-add" title="Tambah / Unggah Gambar Lain">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+              
+              <!-- Thumbnails list container -->
+              <div class="gallery-thumbs-list" id="gallery-thumbs-list">
+                <!-- Dynamically populated thumbnails -->
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      <!-- Toast Notification Container -->
-      <div id="toast-container" class="toast-container" aria-live="polite"></div>
-
-      <!-- Footer -->
-      <footer class="app-footer">
-        <p>ClearCut AI Studio &bull; Ditenagai oleh WebAssembly, ONNX Runtime Web & ISNet Neural Network. 100% Open-Source & Bebas Biaya.</p>
-      </footer>
+      <!-- Toast Container -->
+      <div id="toast-tray" class="toast-tray"></div>
     </div>
 
-    <!-- Hidden Off-screen Export Canvas -->
-    <canvas id="export-canvas" style="display: none;"></canvas>
+    <!-- Hidden Export Canvas -->
+    <canvas id="render-export-canvas" style="display: none;"></canvas>
 
     <script type="module" src="/src/main.js"></script>
   </body>

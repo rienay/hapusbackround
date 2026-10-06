@@ -3,413 +3,477 @@ import { removeBackground } from '@imgly/background-removal';
 import confetti from 'canvas-confetti';
 
 /* ==========================================================================
-   State Management
+   State & Multi-Image Gallery Store
    ========================================================================== */
-const state = {
-  originalFile: null,
-  originalUrl: null,
-  resultBlob: null,
-  resultUrl: null,
-  imgWidth: 0,
-  imgHeight: 0,
+const appState = {
+  // Gallery list: array of image objects
+  // { id, name, originalUrl, resultBlob, resultUrl, width, height, bgMode, bgColor, bgGrad, customBgUrl, blurAmount, shadowOn, shadowBlur, shadowOffset, outlineOn, brightness, contrast, history: [] }
+  items: [],
+  activeIndex: -1,
   
-  viewMode: 'split', // 'split' | 'side' | 'result'
+  // UI states
+  isComparing: false,
   splitPercent: 50,
   isDraggingSlider: false,
+  activePanel: null, // 'panel-cutout' | 'panel-background' | 'panel-effects' | 'panel-adjust' | null
   
-  bgType: 'transparent', // 'transparent' | 'solid' | 'gradient' | 'image'
-  solidColor: '#ffffff',
-  gradientVal: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  customBgUrl: null,
-  
-  shadowEnabled: false,
-  shadowBlur: 20,
-  shadowOffsetY: 15,
-  shadowOpacity: 0.35,
-  outlineEnabled: false,
-  
-  activeTab: 'tab-bg',
+  // Brush state
   brushMode: 'erase', // 'erase' | 'restore'
   brushSize: 25,
   isPainting: false,
-  touchupHistory: [],
-  maxHistory: 10,
   
-  isPeeking: false,
+  theme: 'light',
 };
 
 /* ==========================================================================
-   DOM Element Selectors
+   DOM Elements
    ========================================================================== */
 const els = {
-  // Views
-  viewUpload: document.getElementById('view-upload'),
-  viewProcessing: document.getElementById('view-processing'),
-  viewStudio: document.getElementById('view-studio'),
-  
-  // Upload elements
-  dropZone: document.getElementById('drop-zone'),
-  fileInput: document.getElementById('file-input'),
-  btnSelectFile: document.getElementById('btn-select-file'),
-  sampleBtns: document.querySelectorAll('.sample-card'),
-  btnHeaderNew: document.getElementById('btn-header-new'),
-  
-  // Processing elements
-  processingPreviewImg: document.getElementById('processing-preview-img'),
-  processingTitle: document.getElementById('processing-status-title'),
-  processingSub: document.getElementById('processing-status-sub'),
-  progressFill: document.getElementById('processing-progress-fill'),
-  progressPhaseLabel: document.getElementById('progress-phase-label'),
-  progressPercentLabel: document.getElementById('progress-percentage-label'),
-  
-  // Studio stage elements
-  comparisonSlider: document.getElementById('comparison-slider-element'),
-  sliderBackdrop: document.getElementById('slider-custom-backdrop'),
-  sliderCheckerboard: document.getElementById('slider-checkerboard'),
-  cutoutImg: document.getElementById('cutout-img'),
-  originalImg: document.getElementById('original-img'),
-  originalClip: document.getElementById('original-clip-wrapper'),
-  sliderDivider: document.getElementById('slider-divider-line'),
-  sliderThumb: document.getElementById('slider-thumb-handle'),
-  
-  // Side by Side
-  sideWrapper: document.getElementById('side-by-side-wrapper'),
-  sideOriginalImg: document.getElementById('side-original-img'),
-  sideResultImg: document.getElementById('side-result-img'),
-  sideCustomBg: document.getElementById('side-custom-bg'),
-  
-  // View mode buttons
-  modeSplitBtn: document.getElementById('mode-split-btn'),
-  modeSideBtn: document.getElementById('mode-side-btn'),
-  modeResultBtn: document.getElementById('mode-result-btn'),
-  btnPeekOriginal: document.getElementById('btn-peek-original'),
-  btnFitScreen: document.getElementById('btn-fit-screen'),
-  
-  // Canvas metadata
-  imgDimLabel: document.getElementById('img-dim-label'),
-  executionTimeLabel: document.getElementById('execution-time-label'),
-  
-  // Sidebar tabs
-  tabBtns: document.querySelectorAll('.tab-btn'),
-  tabPanels: document.querySelectorAll('.tab-panel'),
-  
-  // Background controls
-  bgTypeChips: document.querySelectorAll('[data-bg-type]'),
-  bgPanelTransparent: document.getElementById('bg-panel-transparent'),
-  bgPanelSolid: document.getElementById('bg-panel-solid'),
-  bgPanelGradient: document.getElementById('bg-panel-gradient'),
-  bgPanelImage: document.getElementById('bg-panel-image'),
-  colorSwatches: document.querySelectorAll('.color-swatch'),
-  customColorPicker: document.getElementById('custom-solid-color-picker'),
-  gradientSwatches: document.querySelectorAll('.gradient-swatch'),
-  customBgFileInput: document.getElementById('custom-bg-file-input'),
-  btnUploadCustomBg: document.getElementById('btn-upload-custom-bg'),
-  
-  // Shadow controls
-  shadowToggle: document.getElementById('shadow-toggle'),
-  shadowControlsBody: document.getElementById('shadow-controls-body'),
-  shadowBlurSlider: document.getElementById('shadow-blur'),
-  shadowBlurVal: document.getElementById('shadow-blur-val'),
-  shadowOffsetYSlider: document.getElementById('shadow-offsety'),
-  shadowOffsetYVal: document.getElementById('shadow-offsety-val'),
-  shadowOpacitySlider: document.getElementById('shadow-opacity'),
-  shadowOpacityVal: document.getElementById('shadow-opacity-val'),
-  outlineToggle: document.getElementById('outline-toggle'),
-  
-  // Touchup / Brush
-  touchupCanvas: document.getElementById('touchup-canvas'),
-  btnBrushErase: document.getElementById('btn-brush-erase'),
-  btnBrushRestore: document.getElementById('btn-brush-restore'),
-  brushSizeSlider: document.getElementById('brush-size'),
-  brushSizeVal: document.getElementById('brush-size-val'),
-  btnBrushUndo: document.getElementById('btn-brush-undo'),
-  btnBrushReset: document.getElementById('btn-brush-reset'),
-  
-  // Export buttons
-  exportFormatSelect: document.getElementById('export-format-select'),
-  btnDownloadResult: document.getElementById('btn-download-result'),
-  btnCopyClipboard: document.getElementById('btn-copy-clipboard'),
-  btnResetWorkspace: document.getElementById('btn-reset-workspace'),
-  exportCanvas: document.getElementById('export-canvas'),
-  
+  // Screens
+  screenUpload: document.getElementById('upload-screen'),
+  screenProcessing: document.getElementById('processing-screen'),
+  screenStudio: document.getElementById('studio-screen'),
+
+  // Navbar & Branding
+  brandLogoBtn: document.getElementById('brand-logo-btn'),
+  navBtnUpload: document.getElementById('nav-btn-upload'),
+  navBtnBatch: document.getElementById('nav-btn-batch'),
+  btnThemeToggle: document.getElementById('btn-theme-toggle'),
+
+  // Upload Screen
+  dropArea: document.getElementById('drop-area'),
+  mainFileInput: document.getElementById('main-file-input'),
+  btnBrowseFile: document.getElementById('btn-browse-file'),
+  samplePills: document.querySelectorAll('.sample-pill-btn'),
+
+  // Processing Screen
+  procStatusTitle: document.getElementById('proc-status-title'),
+  procStatusDetail: document.getElementById('proc-status-detail'),
+  procProgressTrack: document.getElementById('proc-progress-track'),
+
+  // Top Action Bar
+  actionTabBtns: document.querySelectorAll('.action-tab-btn'),
+  toolPopover: document.getElementById('tool-popover'),
+  popoverContents: document.querySelectorAll('.popover-content'),
+  btnToggleCompare: document.getElementById('btn-toggle-compare'),
+  btnUndo: document.getElementById('btn-undo'),
+  btnRedo: document.getElementById('btn-redo'),
+
+  // Download Split Dropdown
+  btnMainDownload: document.getElementById('btn-main-download'),
+  btnDownloadOptionsToggle: document.getElementById('btn-download-options-toggle'),
+  downloadDropdownMenu: document.getElementById('download-dropdown-menu'),
+  menuItems: document.querySelectorAll('.menu-item'),
+
+  // Popover Panels: Brush
+  btnBrushEraseMode: document.getElementById('btn-brush-erase-mode'),
+  btnBrushRestoreMode: document.getElementById('btn-brush-restore-mode'),
+  brushSizeInput: document.getElementById('brush-size-input'),
+  brushSizeDisplay: document.getElementById('brush-size-display'),
+  btnResetCutout: document.getElementById('btn-reset-cutout'),
+
+  // Popover Panels: Background
+  bgTabPills: document.querySelectorAll('.bg-tab-pill'),
+  stripColor: document.getElementById('strip-color'),
+  stripGradient: document.getElementById('strip-gradient'),
+  stripBlur: document.getElementById('strip-blur'),
+  stripCustomImg: document.getElementById('strip-custom-img'),
+  swatchesColor: document.querySelectorAll('#strip-color .swatch-btn[data-color]'),
+  nativeColorPicker: document.getElementById('native-color-picker'),
+  swatchesGradient: document.querySelectorAll('#strip-gradient .swatch-btn[data-gradient]'),
+  bgBlurSlider: document.getElementById('bg-blur-slider'),
+  bgBlurVal: document.getElementById('bg-blur-val'),
+  customBgInput: document.getElementById('custom-bg-input'),
+  btnPickCustomBg: document.getElementById('btn-pick-custom-bg'),
+
+  // Popover Panels: Effects
+  checkShadow: document.getElementById('check-shadow'),
+  shadowBlurRange: document.getElementById('shadow-blur-range'),
+  shadowOffsetRange: document.getElementById('shadow-offset-range'),
+  checkOutline: document.getElementById('check-outline'),
+
+  // Popover Panels: Adjust
+  adjBrightness: document.getElementById('adj-brightness'),
+  adjContrast: document.getElementById('adj-contrast'),
+  btnResetAdjust: document.getElementById('btn-reset-adjust'),
+
+  // Central Canvas Card
+  canvasCard: document.getElementById('main-canvas-card'),
+  canvasBgLayer: document.getElementById('canvas-bg-layer'),
+  canvasBlurLayer: document.getElementById('canvas-blur-layer'),
+  canvasCheckerboard: document.getElementById('canvas-checkerboard'),
+  canvasCutoutImg: document.getElementById('canvas-cutout-img'),
+  brushCanvas: document.getElementById('brush-canvas'),
+  canvasCompareClip: document.getElementById('canvas-compare-clip'),
+  canvasOriginalImg: document.getElementById('canvas-original-img'),
+  badgeClean: document.getElementById('badge-clean'),
+  compareSliderDivider: document.getElementById('compare-slider-divider'),
+
+  // Bottom Multi-Image Gallery Bar
+  btnGalleryAdd: document.getElementById('btn-gallery-add'),
+  galleryThumbsList: document.getElementById('gallery-thumbs-list'),
+
   // Toasts
-  toastContainer: document.getElementById('toast-container'),
+  toastTray: document.getElementById('toast-tray'),
+  renderExportCanvas: document.getElementById('render-export-canvas'),
 };
 
 /* ==========================================================================
-   Navigation & View Switching
+   Toast Notification
    ========================================================================== */
-function switchView(viewName) {
-  els.viewUpload.classList.remove('active');
-  els.viewProcessing.classList.remove('active');
-  els.viewStudio.classList.remove('active');
-
-  if (viewName === 'upload') {
-    els.viewUpload.classList.add('active');
-    els.btnHeaderNew.classList.add('hidden');
-  } else if (viewName === 'processing') {
-    els.viewProcessing.classList.add('active');
-    els.btnHeaderNew.classList.remove('hidden');
-  } else if (viewName === 'studio') {
-    els.viewStudio.classList.add('active');
-    els.btnHeaderNew.classList.remove('hidden');
-  }
-}
-
-/* ==========================================================================
-   Toast Notification System
-   ========================================================================== */
-function showToast(message, type = 'success') {
+function showToast(message) {
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  
-  const iconSvg = type === 'success' 
-    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
-    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-
-  toast.innerHTML = `${iconSvg}<span>${message}</span>`;
-  els.toastContainer.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.animation = 'toast-out 0.25s forwards';
-    setTimeout(() => toast.remove(), 250);
-  }, 3500);
+  toast.className = 'toast';
+  toast.textContent = message;
+  els.toastTray.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 /* ==========================================================================
-   Core AI Inference Handler
+   Screen Switcher
    ========================================================================== */
-async function processImage(imageSource, filenameHint = 'photo.png') {
-  const startTime = performance.now();
-  
-  // Set preview in processing view
-  if (typeof imageSource === 'string') {
-    state.originalUrl = imageSource;
-    els.processingPreviewImg.src = imageSource;
-  } else if (imageSource instanceof Blob) {
-    if (state.originalUrl) URL.revokeObjectURL(state.originalUrl);
-    state.originalUrl = URL.createObjectURL(imageSource);
-    els.processingPreviewImg.src = state.originalUrl;
-  }
-  
-  switchView('processing');
-  els.progressFill.style.width = '10%';
-  els.progressPercentLabel.textContent = '10%';
-  els.progressPhaseLabel.textContent = 'Menginisialisasi model AI...';
+function showScreen(screenId) {
+  els.screenUpload.classList.remove('active');
+  els.screenProcessing.classList.remove('active');
+  els.screenStudio.classList.remove('active');
 
-  try {
-    const config = {
-      progress: (key, current, total) => {
-        let percent = 20;
-        if (total && total > 0) {
-          percent = Math.min(95, Math.round(20 + (current / total) * 75));
-        }
-        els.progressFill.style.width = `${percent}%`;
-        els.progressPercentLabel.textContent = `${percent}%`;
-        
-        if (key.includes('fetch')) {
-          els.progressPhaseLabel.textContent = 'Mengunduh model neural network (~40MB)...';
-        } else if (key.includes('compute') || key.includes('inference')) {
-          els.progressPhaseLabel.textContent = 'Menganalisis & memotong latar belakang...';
-        } else {
-          els.progressPhaseLabel.textContent = 'Memproses piksel gambar...';
-        }
-      },
-      output: {
-        format: 'image/png',
-        quality: 0.95,
-      }
-    };
+  if (screenId === 'upload') els.screenUpload.classList.add('active');
+  else if (screenId === 'processing') els.screenProcessing.classList.add('active');
+  else if (screenId === 'studio') els.screenStudio.classList.add('active');
+}
 
-    const blob = await removeBackground(imageSource, config);
-    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
-    
-    // Process successful result
-    if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
-    state.resultBlob = blob;
-    state.resultUrl = URL.createObjectURL(blob);
-    
-    // Load metadata and dimensions
-    const probeImg = new Image();
-    probeImg.onload = () => {
-      state.imgWidth = probeImg.naturalWidth;
-      state.imgHeight = probeImg.naturalHeight;
-      els.imgDimLabel.textContent = `${state.imgWidth} × ${state.imgHeight} px`;
-      els.executionTimeLabel.textContent = `${duration} dtk`;
-      
-      initStudioView();
-      switchView('studio');
-      
-      // Trigger subtle celebratory confetti
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.8 },
-        colors: ['#6366f1', '#a855f7', '#06b6d4', '#10b981']
+/* ==========================================================================
+   Processing Handler
+   ========================================================================== */
+async function processFiles(files) {
+  if (!files || files.length === 0) return;
+
+  showScreen('processing');
+  els.procProgressTrack.style.width = '15%';
+  els.procStatusTitle.textContent = 'Memuat model AI di browser...';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    let sourceUrl = '';
+    let name = 'Gambar';
+
+    if (typeof file === 'string') {
+      sourceUrl = file;
+      name = file.split('/').pop();
+    } else {
+      sourceUrl = URL.createObjectURL(file);
+      name = file.name;
+    }
+
+    els.procStatusTitle.textContent = `Menghapus latar belakang (${i + 1}/${files.length})...`;
+
+    try {
+      const config = {
+        progress: (key, current, total) => {
+          let percent = 20;
+          if (total && total > 0) percent = Math.min(95, Math.round(20 + (current / total) * 75));
+          els.procProgressTrack.style.width = `${percent}%`;
+        },
+        output: {
+          format: 'image/png',
+          quality: 0.95
+        }
+      };
+
+      const resultBlob = await removeBackground(file, config);
+      const resultUrl = URL.createObjectURL(resultBlob);
+
+      // Measure dimensions
+      const img = new Image();
+      await new Promise((res) => {
+        img.onload = res;
+        img.src = sourceUrl;
       });
-      showToast('Latar belakang berhasil dihapus dengan presisi tinggi!');
-    };
-    probeImg.src = state.originalUrl;
-    
-  } catch (err) {
-    console.error('Error removing background:', err);
-    switchView('upload');
-    showToast('Gagal memproses gambar. Pastikan koneksi internet stabil untuk unduhan model awal.', 'error');
+
+      const newItem = {
+        id: 'img_' + Date.now() + '_' + i,
+        name: name,
+        originalUrl: sourceUrl,
+        resultBlob: resultBlob,
+        resultUrl: resultUrl,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        bgMode: 'transparent',
+        bgColor: '#ffffff',
+        bgGrad: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        customBgUrl: null,
+        blurAmount: 12,
+        shadowOn: false,
+        shadowBlur: 20,
+        shadowOffset: 15,
+        outlineOn: false,
+        brightness: 100,
+        contrast: 100,
+        history: [],
+      };
+
+      appState.items.push(newItem);
+    } catch (err) {
+      console.error('Failed to process image:', err);
+      showToast('Gagal memproses salah satu gambar. Coba lagi.');
+    }
+  }
+
+  if (appState.items.length > 0) {
+    appState.activeIndex = appState.items.length - 1;
+    renderGalleryTray();
+    loadActiveItemIntoStudio();
+    showScreen('studio');
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#2563eb', '#38bdf8', '#10b981']
+    });
+    showToast('Latar belakang berhasil dihapus!');
+  } else {
+    showScreen('upload');
   }
 }
 
 /* ==========================================================================
-   Studio Initialization & Split Slider
+   Multi-Image Gallery Bottom Tray
    ========================================================================== */
-function initStudioView() {
-  els.cutoutImg.src = state.resultUrl;
-  els.originalImg.src = state.originalUrl;
-  els.sideOriginalImg.src = state.originalUrl;
-  els.sideResultImg.src = state.resultUrl;
+function renderGalleryTray() {
+  els.galleryThumbsList.innerHTML = '';
 
-  setSplitPosition(50);
-  setViewMode('split');
-  updateBackdrop();
-  applyFilters();
-  initTouchupCanvas();
+  appState.items.forEach((item, idx) => {
+    const thumb = document.createElement('div');
+    thumb.className = `thumb-item ${idx === appState.activeIndex ? 'active' : ''}`;
+    thumb.title = item.name;
+
+    const img = document.createElement('img');
+    img.src = item.resultUrl;
+    thumb.appendChild(img);
+
+    thumb.addEventListener('click', () => {
+      if (appState.activeIndex === idx) return;
+      appState.activeIndex = idx;
+      renderGalleryTray();
+      loadActiveItemIntoStudio();
+    });
+
+    els.galleryThumbsList.appendChild(thumb);
+  });
 }
 
-function setSplitPosition(percent) {
-  state.splitPercent = Math.max(0, Math.min(100, percent));
-  els.originalClip.style.width = `${state.splitPercent}%`;
-  els.sliderDivider.style.left = `${state.splitPercent}%`;
-  
-  // Keep original image at full width inside the clip container
-  const containerWidth = els.comparisonSlider.clientWidth;
-  if (containerWidth > 0) {
-    els.originalImg.style.width = `${containerWidth}px`;
+/* ==========================================================================
+   Studio View Synchronizer
+   ========================================================================== */
+function getActiveItem() {
+  if (appState.activeIndex >= 0 && appState.activeIndex < appState.items.length) {
+    return appState.items[appState.activeIndex];
+  }
+  return null;
+}
+
+function loadActiveItemIntoStudio() {
+  const item = getActiveItem();
+  if (!item) return;
+
+  // Set images
+  els.canvasCutoutImg.src = item.resultUrl;
+  els.canvasOriginalImg.src = item.originalUrl;
+  els.canvasBlurLayer.src = item.originalUrl;
+
+  // Sync background UI controls
+  syncBackgroundUI(item);
+  syncEffectsUI(item);
+  syncAdjustUI(item);
+
+  // Apply visuals
+  applyStudioVisuals(item);
+
+  // Init brush canvas
+  initBrushCanvas(item);
+}
+
+function applyStudioVisuals(item) {
+  // 1. Background layer
+  if (item.bgMode === 'transparent') {
+    els.canvasBgLayer.style.background = 'transparent';
+    els.canvasBlurLayer.classList.add('hidden');
+    els.canvasCheckerboard.classList.remove('hidden');
+  } else if (item.bgMode === 'blur') {
+    els.canvasBgLayer.style.background = 'transparent';
+    els.canvasBlurLayer.style.filter = `blur(${item.blurAmount}px)`;
+    els.canvasBlurLayer.classList.remove('hidden');
+    els.canvasCheckerboard.classList.add('hidden');
+  } else if (item.bgMode === 'color') {
+    els.canvasBgLayer.style.background = item.bgColor;
+    els.canvasBlurLayer.classList.add('hidden');
+    els.canvasCheckerboard.classList.add('hidden');
+  } else if (item.bgMode === 'gradient') {
+    els.canvasBgLayer.style.background = item.bgGrad;
+    els.canvasBlurLayer.classList.add('hidden');
+    els.canvasCheckerboard.classList.add('hidden');
+  } else if (item.bgMode === 'custom-img' && item.customBgUrl) {
+    els.canvasBgLayer.style.background = `url(${item.customBgUrl}) center / cover no-repeat`;
+    els.canvasBlurLayer.classList.add('hidden');
+    els.canvasCheckerboard.classList.add('hidden');
+  }
+
+  // 2. Cutout Filters (Shadow, Outline, Brightness, Contrast)
+  let filterParts = [];
+  if (item.shadowOn) {
+    filterParts.push(`drop-shadow(0px ${item.shadowOffset}px ${item.shadowBlur}px rgba(0, 0, 0, 0.45))`);
+  }
+  if (item.outlineOn) {
+    filterParts.push(`drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff)`);
+  }
+  if (item.brightness !== 100) {
+    filterParts.push(`brightness(${item.brightness}%)`);
+  }
+  if (item.contrast !== 100) {
+    filterParts.push(`contrast(${item.contrast}%)`);
+  }
+
+  els.canvasCutoutImg.style.filter = filterParts.join(' ');
+}
+
+/* ==========================================================================
+   Action Bar & Popover Drawer Management
+   ========================================================================== */
+function toggleToolPanel(panelId) {
+  if (appState.activePanel === panelId) {
+    // Close panel
+    appState.activePanel = null;
+    els.toolPopover.classList.add('hidden');
+    els.actionTabBtns.forEach(btn => btn.classList.remove('active'));
+    els.brushCanvas.classList.add('hidden');
+    return;
+  }
+
+  appState.activePanel = panelId;
+  els.toolPopover.classList.remove('hidden');
+
+  els.actionTabBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-panel') === panelId);
+  });
+
+  els.popoverContents.forEach(p => {
+    p.classList.toggle('hidden', p.id !== panelId);
+  });
+
+  // Enable brush overlay only when in cutout mode
+  if (panelId === 'panel-cutout') {
+    els.brushCanvas.classList.remove('hidden');
+  } else {
+    els.brushCanvas.classList.add('hidden');
   }
 }
 
-function setViewMode(mode) {
-  state.viewMode = mode;
-  els.modeSplitBtn.classList.toggle('active', mode === 'split');
-  els.modeSideBtn.classList.toggle('active', mode === 'side');
-  els.modeResultBtn.classList.toggle('active', mode === 'result');
+/* Background UI Synchronization */
+function syncBackgroundUI(item) {
+  els.bgTabPills.forEach(pill => {
+    pill.classList.toggle('active', pill.getAttribute('data-bg-mode') === item.bgMode);
+  });
 
-  if (mode === 'split') {
-    els.comparisonSlider.classList.remove('hidden');
-    els.sideWrapper.classList.add('hidden');
-    els.originalClip.classList.remove('hidden');
-    els.sliderDivider.classList.remove('hidden');
-    setSplitPosition(50);
-  } else if (mode === 'result') {
-    els.comparisonSlider.classList.remove('hidden');
-    els.sideWrapper.classList.add('hidden');
-    els.originalClip.classList.add('hidden');
-    els.sliderDivider.classList.add('hidden');
-  } else if (mode === 'side') {
-    els.comparisonSlider.classList.add('hidden');
-    els.sideWrapper.classList.remove('hidden');
+  els.stripColor.classList.toggle('hidden', item.bgMode !== 'color');
+  els.stripGradient.classList.toggle('hidden', item.bgMode !== 'gradient');
+  els.stripBlur.classList.toggle('hidden', item.bgMode !== 'blur');
+  els.stripCustomImg.classList.toggle('hidden', item.bgMode !== 'custom-img');
+
+  els.bgBlurSlider.value = item.blurAmount;
+  els.bgBlurVal.textContent = `${item.blurAmount}px`;
+}
+
+/* Effects UI Synchronization */
+function syncEffectsUI(item) {
+  els.checkShadow.checked = item.shadowOn;
+  els.shadowBlurRange.value = item.shadowBlur;
+  els.shadowOffsetRange.value = item.shadowOffset;
+  els.checkOutline.checked = item.outlineOn;
+}
+
+/* Adjust UI Synchronization */
+function syncAdjustUI(item) {
+  els.adjBrightness.value = item.brightness;
+  els.adjContrast.value = item.contrast;
+}
+
+/* ==========================================================================
+   Compare (Before / After Split Slider)
+   ========================================================================== */
+function toggleCompareSlider() {
+  appState.isComparing = !appState.isComparing;
+  els.btnToggleCompare.classList.toggle('active', appState.isComparing);
+
+  els.canvasCompareClip.classList.toggle('hidden', !appState.isComparing);
+  els.compareSliderDivider.classList.toggle('hidden', !appState.isComparing);
+  els.badgeClean.classList.toggle('hidden', !appState.isComparing);
+
+  if (appState.isComparing) {
+    setComparePercent(50);
   }
 }
 
-/* Draggable Slider Handle */
-function initSplitSliderEvents() {
-  const slider = els.comparisonSlider;
+function setComparePercent(percent) {
+  appState.splitPercent = Math.max(0, Math.min(100, percent));
+  els.canvasCompareClip.style.width = `${appState.splitPercent}%`;
+  els.compareSliderDivider.style.left = `${appState.splitPercent}%`;
 
-  function updateDrag(clientX) {
-    const rect = slider.getBoundingClientRect();
-    const offsetX = clientX - rect.left;
-    const percent = (offsetX / rect.width) * 100;
-    setSplitPosition(percent);
+  const cardWidth = els.canvasCard.clientWidth;
+  if (cardWidth > 0) {
+    els.canvasOriginalImg.style.width = `${cardWidth}px`;
+  }
+}
+
+function initCompareSliderEvents() {
+  const card = els.canvasCard;
+
+  function handleMove(clientX) {
+    if (!appState.isComparing || !appState.isDraggingSlider) return;
+    const rect = card.getBoundingClientRect();
+    const percent = ((clientX - rect.left) / rect.width) * 100;
+    setComparePercent(percent);
   }
 
-  slider.addEventListener('mousedown', (e) => {
-    state.isDraggingSlider = true;
-    updateDrag(e.clientX);
+  card.addEventListener('mousedown', (e) => {
+    if (!appState.isComparing) return;
+    appState.isDraggingSlider = true;
+    handleMove(e.clientX);
   });
 
   window.addEventListener('mousemove', (e) => {
-    if (!state.isDraggingSlider) return;
-    updateDrag(e.clientX);
+    handleMove(e.clientX);
   });
 
   window.addEventListener('mouseup', () => {
-    state.isDraggingSlider = false;
+    appState.isDraggingSlider = false;
   });
 
   // Touch Support
-  slider.addEventListener('touchstart', (e) => {
-    state.isDraggingSlider = true;
-    if (e.touches.length > 0) updateDrag(e.touches[0].clientX);
+  card.addEventListener('touchstart', (e) => {
+    if (!appState.isComparing) return;
+    appState.isDraggingSlider = true;
+    if (e.touches.length > 0) handleMove(e.touches[0].clientX);
   }, { passive: true });
 
   window.addEventListener('touchmove', (e) => {
-    if (!state.isDraggingSlider) return;
-    if (e.touches.length > 0) updateDrag(e.touches[0].clientX);
+    if (e.touches.length > 0) handleMove(e.touches[0].clientX);
   }, { passive: true });
 
   window.addEventListener('touchend', () => {
-    state.isDraggingSlider = false;
-  });
-
-  // Window resize to maintain clip alignment
-  window.addEventListener('resize', () => {
-    setSplitPosition(state.splitPercent);
+    appState.isDraggingSlider = false;
   });
 }
 
 /* ==========================================================================
-   Background Customization Engine
+   Brush (Potongan: Erase / Restore Canvas)
    ========================================================================== */
-function updateBackdrop() {
-  const backdrop = els.sliderBackdrop;
-  const sideBg = els.sideCustomBg;
-  const checkerboard = els.sliderCheckerboard;
-
-  if (state.bgType === 'transparent') {
-    backdrop.style.background = 'transparent';
-    sideBg.style.background = 'transparent';
-    checkerboard.style.opacity = '1';
-  } else if (state.bgType === 'solid') {
-    backdrop.style.background = state.solidColor;
-    sideBg.style.background = state.solidColor;
-    checkerboard.style.opacity = '0';
-  } else if (state.bgType === 'gradient') {
-    backdrop.style.background = state.gradientVal;
-    sideBg.style.background = state.gradientVal;
-    checkerboard.style.opacity = '0';
-  } else if (state.bgType === 'image' && state.customBgUrl) {
-    backdrop.style.background = `url(${state.customBgUrl}) center / cover no-repeat`;
-    sideBg.style.background = `url(${state.customBgUrl}) center / cover no-repeat`;
-    checkerboard.style.opacity = '0';
-  }
-}
-
-/* ==========================================================================
-   Shadow & Glow Filters
-   ========================================================================== */
-function applyFilters() {
-  let filterStr = '';
-
-  if (state.shadowEnabled) {
-    filterStr += `drop-shadow(0px ${state.shadowOffsetY}px ${state.shadowBlur}px rgba(0, 0, 0, ${state.shadowOpacity})) `;
-  }
-
-  if (state.outlineEnabled) {
-    filterStr += `drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 6px #ffffff) `;
-  }
-
-  els.cutoutImg.style.filter = filterStr.trim();
-  els.sideResultImg.style.filter = filterStr.trim();
-}
-
-/* ==========================================================================
-   Touch-Up / Manual Brush Tool
-   ========================================================================== */
-function initTouchupCanvas() {
-  const canvas = els.touchupCanvas;
+function initBrushCanvas(item) {
+  const canvas = els.brushCanvas;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  
-  const img = els.cutoutImg;
+  const img = els.canvasCutoutImg;
+
   if (!img.complete || img.naturalWidth === 0) {
-    img.onload = () => initTouchupCanvas();
+    img.onload = () => initBrushCanvas(item);
     return;
   }
 
@@ -418,24 +482,17 @@ function initTouchupCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0);
 
-  saveHistorySnapshot();
-}
-
-function saveHistorySnapshot() {
-  const canvas = els.touchupCanvas;
-  const ctx = canvas.getContext('2d');
-  const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  state.touchupHistory.push(snapshot);
-  if (state.touchupHistory.length > state.maxHistory) {
-    state.touchupHistory.shift();
+  // Push initial snapshot
+  if (item.history.length === 0) {
+    item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
   }
 }
 
-function setupTouchupEvents() {
-  const canvas = els.touchupCanvas;
+function setupBrushEvents() {
+  const canvas = els.brushCanvas;
   const ctx = canvas.getContext('2d');
 
-  function getCanvasCoords(e) {
+  function getCoords(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -445,450 +502,427 @@ function setupTouchupEvents() {
     };
   }
 
-  function startPainting(e) {
-    if (state.activeTab !== 'tab-touchup') return;
-    state.isPainting = true;
-    paint(e);
-  }
-
   function paint(e) {
-    if (!state.isPainting || state.activeTab !== 'tab-touchup') return;
-    const { x, y } = getCanvasCoords(e);
+    if (!appState.isPainting || appState.activePanel !== 'panel-cutout') return;
+    const item = getActiveItem();
+    if (!item) return;
+
+    const { x, y } = getCoords(e);
 
     ctx.save();
-    if (state.brushMode === 'erase') {
+    if (appState.brushMode === 'erase') {
       ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath();
-      ctx.arc(x, y, state.brushSize, 0, Math.PI * 2);
+      ctx.arc(x, y, appState.brushSize, 0, Math.PI * 2);
       ctx.fill();
-    } else if (state.brushMode === 'restore') {
-      // Paint from original image
+    } else if (appState.brushMode === 'restore') {
       ctx.save();
       ctx.beginPath();
-      ctx.arc(x, y, state.brushSize, 0, Math.PI * 2);
+      ctx.arc(x, y, appState.brushSize, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(els.originalImg, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(els.canvasOriginalImg, 0, 0, canvas.width, canvas.height);
       ctx.restore();
     }
     ctx.restore();
   }
 
-  function stopPainting() {
-    if (!state.isPainting) return;
-    state.isPainting = false;
-    saveHistorySnapshot();
-    
-    // Sync canvas to cutoutImg
-    canvas.toBlob((blob) => {
-      if (blob) {
-        if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
-        state.resultBlob = blob;
-        state.resultUrl = URL.createObjectURL(blob);
-        els.cutoutImg.src = state.resultUrl;
-        els.sideResultImg.src = state.resultUrl;
-      }
-    }, 'image/png');
-  }
-
-  canvas.addEventListener('mousedown', startPainting);
-  canvas.addEventListener('mousemove', paint);
-  window.addEventListener('mouseup', stopPainting);
-
-  // Undo button
-  els.btnBrushUndo.addEventListener('click', () => {
-    if (state.touchupHistory.length > 1) {
-      state.touchupHistory.pop(); // Remove current
-      const prev = state.touchupHistory[state.touchupHistory.length - 1];
-      ctx.putImageData(prev, 0, 0);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          state.resultBlob = blob;
-          state.resultUrl = URL.createObjectURL(blob);
-          els.cutoutImg.src = state.resultUrl;
-          els.sideResultImg.src = state.resultUrl;
-          showToast('Perubahan dibatalkan (Undo)');
-        }
-      }, 'image/png');
-    } else {
-      showToast('Tidak ada goresan sebelumnya', 'error');
-    }
+  canvas.addEventListener('mousedown', (e) => {
+    if (appState.activePanel !== 'panel-cutout') return;
+    appState.isPainting = true;
+    paint(e);
   });
 
-  // Reset to initial AI result
-  els.btnBrushReset.addEventListener('click', () => {
-    initTouchupCanvas();
-    showToast('Kuas direset kembali ke hasil AI awal');
+  canvas.addEventListener('mousemove', paint);
+
+  window.addEventListener('mouseup', () => {
+    if (!appState.isPainting) return;
+    appState.isPainting = false;
+
+    const item = getActiveItem();
+    if (!item) return;
+
+    // Save snapshot
+    item.history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+
+    // Update active item blob and img
+    canvas.toBlob((blob) => {
+      if (blob) {
+        if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
+        item.resultBlob = blob;
+        item.resultUrl = URL.createObjectURL(blob);
+        els.canvasCutoutImg.src = item.resultUrl;
+        renderGalleryTray();
+      }
+    }, 'image/png');
+  });
+
+  // Reset Cutout
+  els.btnResetCutout.addEventListener('click', () => {
+    const item = getActiveItem();
+    if (!item) return;
+    initBrushCanvas(item);
+    showToast('Potongan direset ke awal');
   });
 }
 
 /* ==========================================================================
-   Export & Download Engine
+   Export & Download
    ========================================================================== */
-async function generateFinalImage(format = 'png') {
-  const canvas = els.exportCanvas;
+async function renderExport(format = 'png') {
+  const item = getActiveItem();
+  if (!item) return null;
+
+  const canvas = els.renderExportCanvas;
   const ctx = canvas.getContext('2d');
-  
-  canvas.width = state.imgWidth;
-  canvas.height = state.imgHeight;
+  canvas.width = item.width;
+  canvas.height = item.height;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // 1. Draw Background
-  if (state.bgType === 'solid') {
-    ctx.fillStyle = state.solidColor;
+  if (item.bgMode === 'blur') {
+    ctx.save();
+    ctx.filter = `blur(${item.blurAmount * 2}px)`;
+    ctx.drawImage(els.canvasOriginalImg, -20, -20, canvas.width + 40, canvas.height + 40);
+    ctx.restore();
+  } else if (item.bgMode === 'color') {
+    ctx.fillStyle = item.bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (state.bgType === 'gradient') {
-    // Parse gradient or draw temporary representation
+  } else if (item.bgMode === 'gradient') {
     const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    if (state.gradientVal.includes('#667eea')) {
-      grad.addColorStop(0, '#667eea');
-      grad.addColorStop(1, '#764ba2');
-    } else if (state.gradientVal.includes('#ff9a9e')) {
-      grad.addColorStop(0, '#ff9a9e');
-      grad.addColorStop(1, '#fecfef');
-    } else if (state.gradientVal.includes('#0ba360')) {
-      grad.addColorStop(0, '#0ba360');
-      grad.addColorStop(1, '#3cba92');
-    } else if (state.gradientVal.includes('#f093fb')) {
-      grad.addColorStop(0, '#f093fb');
-      grad.addColorStop(1, '#f5576c');
-    } else if (state.gradientVal.includes('#2b5876')) {
-      grad.addColorStop(0, '#2b5876');
-      grad.addColorStop(1, '#4e4376');
+    if (item.bgGrad.includes('#667eea')) {
+      grad.addColorStop(0, '#667eea'); grad.addColorStop(1, '#764ba2');
+    } else if (item.bgGrad.includes('#ff9a9e')) {
+      grad.addColorStop(0, '#ff9a9e'); grad.addColorStop(1, '#fecfef');
+    } else if (item.bgGrad.includes('#0ba360')) {
+      grad.addColorStop(0, '#0ba360'); grad.addColorStop(1, '#3cba92');
+    } else if (item.bgGrad.includes('#f093fb')) {
+      grad.addColorStop(0, '#f093fb'); grad.addColorStop(1, '#f5576c');
     } else {
-      grad.addColorStop(0, '#141e30');
-      grad.addColorStop(1, '#243b55');
+      grad.addColorStop(0, '#141e30'); grad.addColorStop(1, '#243b55');
     }
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (state.bgType === 'image' && state.customBgUrl) {
-    const bgImg = new Image();
-    bgImg.src = state.customBgUrl;
-    await new Promise((res) => { bgImg.onload = res; });
-    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+  } else if (item.bgMode === 'custom-img' && item.customBgUrl) {
+    const bg = new Image();
+    bg.src = item.customBgUrl;
+    await new Promise(r => { bg.onload = r; });
+    ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
   }
 
-  // 2. Draw Shadow & Outline if enabled
-  if (state.shadowEnabled || state.outlineEnabled) {
+  // 2. Draw Shadow / Outline
+  if (item.shadowOn) {
     ctx.save();
-    if (state.shadowEnabled) {
-      ctx.shadowColor = `rgba(0, 0, 0, ${state.shadowOpacity})`;
-      ctx.shadowBlur = state.shadowBlur * 1.5;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = state.shadowOffsetY * 1.5;
-    }
-    ctx.drawImage(els.cutoutImg, 0, 0, canvas.width, canvas.height);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = item.shadowBlur * 1.5;
+    ctx.shadowOffsetY = item.shadowOffset * 1.5;
+    ctx.drawImage(els.canvasCutoutImg, 0, 0, canvas.width, canvas.height);
     ctx.restore();
   }
 
-  // 3. Draw Cutout Subject
-  ctx.drawImage(els.cutoutImg, 0, 0, canvas.width, canvas.height);
+  // 3. Draw Cutout Subject with adjustments
+  ctx.save();
+  if (item.brightness !== 100 || item.contrast !== 100) {
+    ctx.filter = `brightness(${item.brightness}%) contrast(${item.contrast}%)`;
+  }
+  ctx.drawImage(els.canvasCutoutImg, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
 
-  const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), mimeType, 0.95);
-  });
+  const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+  return new Promise(res => canvas.toBlob(b => res(b), mime, 0.95));
 }
 
-async function handleDownload() {
-  const format = els.exportFormatSelect.value;
-  const blob = await generateFinalImage(format);
+async function triggerDownload(format = 'png') {
+  const blob = await renderExport(format);
   if (!blob) return;
 
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `clearcut-ai-${Date.now()}.${format === 'jpeg' ? 'jpg' : format}`;
+  a.download = `remove-ai-${Date.now()}.${format === 'jpeg' ? 'jpg' : 'png'}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  confetti({
-    particleCount: 80,
-    spread: 70,
-    origin: { y: 0.7 }
-  });
-  showToast(`Gambar berhasil diunduh sebagai ${format.toUpperCase()}!`);
+  confetti({ particleCount: 60, spread: 60, origin: { y: 0.8 } });
+  showToast('Gambar berhasil diunduh!');
 }
 
-async function handleCopyClipboard() {
+async function triggerCopyClipboard() {
   try {
-    const blob = await generateFinalImage('png');
+    const blob = await renderExport('png');
     if (!blob) return;
-
     if (navigator.clipboard && navigator.clipboard.write) {
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      showToast('Gambar disalin ke clipboard! Siap dipaste ke Canva/WA/Photoshop.');
-    } else {
-      showToast('Clipboard API tidak didukung browser ini.', 'error');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      showToast('Gambar disalin ke clipboard!');
     }
   } catch (err) {
     console.error('Clipboard copy failed:', err);
-    showToast('Gagal menyalin gambar ke clipboard.', 'error');
+    showToast('Gagal menyalin gambar');
   }
 }
 
 /* ==========================================================================
-   Event Listeners Setup
+   Wire Up All Events
    ========================================================================== */
-function setupEventListeners() {
-  // File Input & Dropzone
-  els.btnSelectFile.addEventListener('click', (e) => {
-    e.stopPropagation();
-    els.fileInput.click();
+function initEvents() {
+  // Brand logo click returns to upload
+  els.brandLogoBtn.addEventListener('click', () => showScreen('upload'));
+  els.navBtnUpload.addEventListener('click', () => showScreen('upload'));
+  els.navBtnBatch.addEventListener('click', () => els.mainFileInput.click());
+
+  // Theme toggle
+  els.btnThemeToggle.addEventListener('click', () => {
+    appState.theme = appState.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', appState.theme);
   });
 
-  els.dropZone.addEventListener('click', () => {
-    els.fileInput.click();
-  });
+  // Browse file button & dropzone
+  els.btnBrowseFile.addEventListener('click', () => els.mainFileInput.click());
+  els.dropArea.addEventListener('click', () => els.mainFileInput.click());
 
-  els.fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files[0]) {
-      processImage(e.target.files[0], e.target.files[0].name);
+  els.mainFileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(Array.from(e.target.files));
+      e.target.value = '';
     }
   });
 
-  // Drag and Drop
-  ['dragenter', 'dragover'].forEach((eventName) => {
-    els.dropZone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      els.dropZone.classList.add('dragover');
+  // Drag and drop
+  ['dragenter', 'dragover'].forEach(ev => {
+    els.dropArea.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      els.dropArea.classList.add('dragover');
     });
   });
-
-  ['dragleave', 'drop'].forEach((eventName) => {
-    els.dropZone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      els.dropZone.classList.remove('dragover');
+  ['dragleave', 'drop'].forEach(ev => {
+    els.dropArea.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      els.dropArea.classList.remove('dragover');
     });
   });
-
-  els.dropZone.addEventListener('drop', (e) => {
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      processImage(files[0], files[0].name);
+  els.dropArea.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files));
     }
   });
 
-  // Paste Event Listener (Ctrl + V from anywhere!)
+  // Paste handler (Ctrl+V)
   window.addEventListener('paste', (e) => {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+    if (!items) return;
     for (const item of items) {
       if (item.type.indexOf('image') !== -1) {
         const file = item.getAsFile();
-        processImage(file, 'clipboard-image.png');
-        showToast('Foto dari clipboard terdeteksi!');
+        processFiles([file]);
         break;
       }
     }
   });
 
-  // Sample Buttons
-  els.sampleBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const sampleUrl = btn.getAttribute('data-sample');
-      processImage(sampleUrl, 'sample.jpg');
+  // Sample pill buttons
+  els.samplePills.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const src = btn.getAttribute('data-src');
+      processFiles([src]);
     });
   });
 
-  // Header and Reset Buttons
-  els.btnHeaderNew.addEventListener('click', () => switchView('upload'));
-  els.btnResetWorkspace.addEventListener('click', () => switchView('upload'));
-
-  // View Mode Switchers
-  els.modeSplitBtn.addEventListener('click', () => setViewMode('split'));
-  els.modeSideBtn.addEventListener('click', () => setViewMode('side'));
-  els.modeResultBtn.addEventListener('click', () => setViewMode('result'));
-
-  // Peek Original Button (Hold to Peek)
-  function startPeeking() {
-    state.isPeeking = true;
-    els.originalClip.style.width = '100%';
-    els.sliderDivider.style.opacity = '0';
-  }
-  function stopPeeking() {
-    if (!state.isPeeking) return;
-    state.isPeeking = false;
-    setSplitPosition(state.splitPercent);
-    els.sliderDivider.style.opacity = '1';
-  }
-
-  els.btnPeekOriginal.addEventListener('mousedown', startPeeking);
-  window.addEventListener('mouseup', stopPeeking);
-  els.btnPeekOriginal.addEventListener('touchstart', startPeeking, { passive: true });
-  window.addEventListener('touchend', stopPeeking);
-
-  // Keyboard Shortcuts (Space to peek, Esc to reset)
-  window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-      e.preventDefault();
-      startPeeking();
-    } else if (e.code === 'Escape') {
-      if (els.viewStudio.classList.contains('active')) {
-        switchView('upload');
-      }
-    }
-  });
-
-  window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space') {
-      stopPeeking();
-    }
-  });
-
-  // Fit Screen Button
-  els.btnFitScreen.addEventListener('click', () => {
-    setSplitPosition(50);
-    showToast('Tampilan kembali ke posisi default');
-  });
-
-  // Sidebar Tabs Navigation
-  els.tabBtns.forEach((btn) => {
+  // Top action bar tabs
+  els.actionTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const tabId = btn.getAttribute('data-tab');
-      state.activeTab = tabId;
+      const panelId = btn.getAttribute('data-panel');
+      toggleToolPanel(panelId);
+    });
+  });
 
-      els.tabBtns.forEach((b) => b.classList.remove('active'));
-      els.tabPanels.forEach((p) => p.classList.remove('active'));
+  // Compare split toggle
+  els.btnToggleCompare.addEventListener('click', toggleCompareSlider);
 
-      btn.classList.add('active');
-      document.getElementById(tabId).classList.add('active');
-
-      // Enable touchup canvas overlay only on touchup tab
-      if (tabId === 'tab-touchup') {
-        els.touchupCanvas.classList.remove('hidden');
-      } else {
-        els.touchupCanvas.classList.add('hidden');
+  // Undo / Redo
+  els.btnUndo.addEventListener('click', () => {
+    const item = getActiveItem();
+    if (!item || item.history.length <= 1) return;
+    item.history.pop();
+    const prev = item.history[item.history.length - 1];
+    const ctx = els.brushCanvas.getContext('2d');
+    ctx.putImageData(prev, 0, 0);
+    els.brushCanvas.toBlob(blob => {
+      if (blob) {
+        item.resultBlob = blob;
+        item.resultUrl = URL.createObjectURL(blob);
+        els.canvasCutoutImg.src = item.resultUrl;
+        renderGalleryTray();
+        showToast('Perubahan diurungkan');
       }
     });
   });
 
-  // Background Type Chips
-  els.bgTypeChips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      els.bgTypeChips.forEach((c) => c.classList.remove('active'));
-      chip.classList.add('active');
+  // Download split buttons & menu
+  els.btnMainDownload.addEventListener('click', () => triggerDownload('png'));
+  els.btnDownloadOptionsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    els.downloadDropdownMenu.classList.toggle('hidden');
+  });
 
-      const bgType = chip.getAttribute('data-bg-type');
-      state.bgType = bgType;
+  window.addEventListener('click', () => {
+    els.downloadDropdownMenu.classList.add('hidden');
+  });
 
-      els.bgPanelTransparent.classList.add('hidden');
-      els.bgPanelSolid.classList.add('hidden');
-      els.bgPanelGradient.classList.add('hidden');
-      els.bgPanelImage.classList.add('hidden');
-
-      if (bgType === 'transparent') els.bgPanelTransparent.classList.remove('hidden');
-      else if (bgType === 'solid') els.bgPanelSolid.classList.remove('hidden');
-      else if (bgType === 'gradient') els.bgPanelGradient.classList.remove('hidden');
-      else if (bgType === 'image') els.bgPanelImage.classList.remove('hidden');
-
-      updateBackdrop();
+  els.menuItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const action = item.getAttribute('data-action');
+      if (action === 'dl-png') triggerDownload('png');
+      else if (action === 'dl-jpg') triggerDownload('jpeg');
+      else if (action === 'copy') triggerCopyClipboard();
+      els.downloadDropdownMenu.classList.add('hidden');
     });
   });
 
-  // Solid Color Swatches
-  els.colorSwatches.forEach((swatch) => {
-    if (swatch.classList.contains('custom-picker-swatch')) return;
-    swatch.addEventListener('click', () => {
-      els.colorSwatches.forEach((s) => s.classList.remove('active'));
-      swatch.classList.add('active');
-      state.solidColor = swatch.getAttribute('data-color');
-      updateBackdrop();
+  // Brush controls
+  els.btnBrushEraseMode.addEventListener('click', () => {
+    appState.brushMode = 'erase';
+    els.btnBrushEraseMode.classList.add('active');
+    els.btnBrushRestoreMode.classList.remove('active');
+  });
+  els.btnBrushRestoreMode.addEventListener('click', () => {
+    appState.brushMode = 'restore';
+    els.btnBrushRestoreMode.classList.add('active');
+    els.btnBrushEraseMode.classList.remove('active');
+  });
+  els.brushSizeInput.addEventListener('input', (e) => {
+    appState.brushSize = parseInt(e.target.value, 10);
+    els.brushSizeDisplay.textContent = `${appState.brushSize}px`;
+  });
+
+  // Background Mode Tabs
+  els.bgTabPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const mode = pill.getAttribute('data-bg-mode');
+      const item = getActiveItem();
+      if (!item) return;
+
+      item.bgMode = mode;
+      syncBackgroundUI(item);
+      applyStudioVisuals(item);
     });
   });
 
-  els.customColorPicker.addEventListener('input', (e) => {
-    state.solidColor = e.target.value;
-    els.colorSwatches.forEach((s) => s.classList.remove('active'));
-    updateBackdrop();
+  // Color Swatches
+  els.swatchesColor.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const color = btn.getAttribute('data-color');
+      const item = getActiveItem();
+      if (!item) return;
+      item.bgColor = color;
+      els.swatchesColor.forEach(b => b.classList.toggle('active', b === btn));
+      applyStudioVisuals(item);
+    });
+  });
+
+  els.nativeColorPicker.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.bgColor = e.target.value;
+    els.swatchesColor.forEach(b => b.classList.remove('active'));
+    applyStudioVisuals(item);
   });
 
   // Gradient Swatches
-  els.gradientSwatches.forEach((swatch) => {
-    swatch.addEventListener('click', () => {
-      els.gradientSwatches.forEach((s) => s.classList.remove('active'));
-      swatch.classList.add('active');
-      state.gradientVal = swatch.getAttribute('data-gradient');
-      updateBackdrop();
+  els.swatchesGradient.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const grad = btn.getAttribute('data-gradient');
+      const item = getActiveItem();
+      if (!item) return;
+      item.bgGrad = grad;
+      els.swatchesGradient.forEach(b => b.classList.toggle('active', b === btn));
+      applyStudioVisuals(item);
     });
   });
 
-  // Custom Background Upload
-  els.btnUploadCustomBg.addEventListener('click', () => els.customBgFileInput.click());
-  els.customBgFileInput.addEventListener('change', (e) => {
+  // Background Blur Slider
+  els.bgBlurSlider.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.blurAmount = parseInt(e.target.value, 10);
+    els.bgBlurVal.textContent = `${item.blurAmount}px`;
+    applyStudioVisuals(item);
+  });
+
+  // Custom Background Image Picker
+  els.btnPickCustomBg.addEventListener('click', () => els.customBgInput.click());
+  els.customBgInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files[0]) {
-      if (state.customBgUrl) URL.revokeObjectURL(state.customBgUrl);
-      state.customBgUrl = URL.createObjectURL(e.target.files[0]);
-      updateBackdrop();
-      showToast('Latar belakang kustom berhasil diterapkan!');
+      const item = getActiveItem();
+      if (!item) return;
+      item.customBgUrl = URL.createObjectURL(e.target.files[0]);
+      applyStudioVisuals(item);
+      showToast('Latar belakang foto kustom terpasang!');
     }
   });
 
-  // Shadow Controls
-  els.shadowToggle.addEventListener('change', (e) => {
-    state.shadowEnabled = e.target.checked;
-    els.shadowControlsBody.classList.toggle('disabled', !state.shadowEnabled);
-    applyFilters();
+  // Effects (Shadow & Outline)
+  els.checkShadow.addEventListener('change', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.shadowOn = e.target.checked;
+    applyStudioVisuals(item);
+  });
+  els.shadowBlurRange.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.shadowBlur = parseInt(e.target.value, 10);
+    applyStudioVisuals(item);
+  });
+  els.shadowOffsetRange.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.shadowOffset = parseInt(e.target.value, 10);
+    applyStudioVisuals(item);
+  });
+  els.checkOutline.addEventListener('change', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.outlineOn = e.target.checked;
+    applyStudioVisuals(item);
   });
 
-  els.shadowBlurSlider.addEventListener('input', (e) => {
-    state.shadowBlur = e.target.value;
-    els.shadowBlurVal.textContent = `${state.shadowBlur}px`;
-    applyFilters();
+  // Adjustments (Brightness & Contrast)
+  els.adjBrightness.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.brightness = parseInt(e.target.value, 10);
+    applyStudioVisuals(item);
+  });
+  els.adjContrast.addEventListener('input', (e) => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.contrast = parseInt(e.target.value, 10);
+    applyStudioVisuals(item);
+  });
+  els.btnResetAdjust.addEventListener('click', () => {
+    const item = getActiveItem();
+    if (!item) return;
+    item.brightness = 100;
+    item.contrast = 100;
+    syncAdjustUI(item);
+    applyStudioVisuals(item);
+    showToast('Penyesuaian direset');
   });
 
-  els.shadowOffsetYSlider.addEventListener('input', (e) => {
-    state.shadowOffsetY = e.target.value;
-    els.shadowOffsetYVal.textContent = `${state.shadowOffsetY}px`;
-    applyFilters();
-  });
+  // Bottom gallery add button (+)
+  els.btnGalleryAdd.addEventListener('click', () => els.mainFileInput.click());
 
-  els.shadowOpacitySlider.addEventListener('input', (e) => {
-    state.shadowOpacity = (e.target.value / 100).toFixed(2);
-    els.shadowOpacityVal.textContent = `${e.target.value}%`;
-    applyFilters();
-  });
-
-  els.outlineToggle.addEventListener('change', (e) => {
-    state.outlineEnabled = e.target.checked;
-    applyFilters();
-  });
-
-  // Touchup Brush Mode
-  els.btnBrushErase.addEventListener('click', () => {
-    state.brushMode = 'erase';
-    els.btnBrushErase.classList.add('active');
-    els.btnBrushRestore.classList.remove('active');
-  });
-
-  els.btnBrushRestore.addEventListener('click', () => {
-    state.brushMode = 'restore';
-    els.btnBrushRestore.classList.add('active');
-    els.btnBrushErase.classList.remove('active');
-  });
-
-  els.brushSizeSlider.addEventListener('input', (e) => {
-    state.brushSize = parseInt(e.target.value, 10);
-    els.brushSizeVal.textContent = `${state.brushSize}px`;
-  });
-
-  // Download & Copy
-  els.btnDownloadResult.addEventListener('click', handleDownload);
-  els.btnCopyClipboard.addEventListener('click', handleCopyClipboard);
-
-  // Initialize Split Slider & Touchup Events
-  initSplitSliderEvents();
-  setupTouchupEvents();
+  // Initialize Split Slider & Brush Events
+  initCompareSliderEvents();
+  setupBrushEvents();
 }
 
 /* ==========================================================================
-   Application Bootstrap
+   Start Application
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-  setupEventListeners();
-  switchView('upload');
+  initEvents();
+  showScreen('upload');
 });
