@@ -1732,9 +1732,11 @@ function setupEventListeners() {
     els.colorToleranceDisplay.textContent = `${appState.colorTolerance}%`;
   });
 
-  els.checkContiguousColor.addEventListener('change', (e) => {
-    appState.isContiguousColor = e.target.checked;
-  });
+  if (els.checkContiguousColor) {
+    els.checkContiguousColor.addEventListener('change', (e) => {
+      appState.isContiguousColor = e.target.checked;
+    });
+  }
 
   // Pulih Otomatis Controls
   if (els.restoreToleranceInput) {
