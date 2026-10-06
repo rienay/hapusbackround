@@ -1,49 +1,71 @@
 /* ==========================================================================
-   remove.bg Clean Modern Design Theme
+   Pudding.bg — Signature Dessert & Custard Aesthetic Theme
    ========================================================================== */
 
 :root {
-  --bg-app: #f4f5f8;
+  /* Signature Pudding Caramel, Custard & Dessert Palette */
+  --pudding-caramel: #f59e0b;
+  --pudding-caramel-hover: #d97706;
+  --pudding-caramel-dark: #b45309;
+  --pudding-cream: #fffbeb;
+  --pudding-custard: #fef3c7;
+  --pudding-latte: #fde68a;
+
+  --pudding-berry: #f43f5e;
+  --pudding-berry-light: #ffe4e6;
+  --pudding-mint: #10b981;
+  --pudding-mint-light: #d1fae5;
+  --pudding-wa: #25d366;
+  --pudding-magic: #8b5cf6;
+  --pudding-magic-light: #f3e8ff;
+
+  --bg-app: #faf8f5;
   --bg-card: #ffffff;
-  --bg-toolbar: #ffffff;
-  --border-color: #e2e8f0;
-  --border-active: #2563eb;
+  --bg-toolbar: rgba(255, 255, 255, 0.94);
+  --border-color: #f1e9dd;
+  --border-hover: #e6dac6;
+  --border-active: #f59e0b;
 
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
+  --text-main: #292524; /* warm espresso chocolate */
+  --text-muted: #78716c; /* warm stone */
+  --text-light: #a8a29e;
 
-  --brand-blue: #2563eb;
-  --brand-blue-hover: #1d4ed8;
-  --brand-blue-light: #eff6ff;
+  /* Brand Primary */
+  --brand-blue: #f59e0b;
+  --brand-blue-hover: #d97706;
+  --brand-blue-light: #fef3c7;
 
-  --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --radius-full: 9999px;
+  --radius-2xl: 24px;
   --radius-xl: 18px;
-  --radius-lg: 12px;
-  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --radius-sm: 6px;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-float: 0 10px 30px -4px rgba(0, 0, 0, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
-  --shadow-canvas: 0 20px 45px -10px rgba(0, 0, 0, 0.15), 0 8px 20px -5px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 6px rgba(217, 119, 6, 0.05), 0 1px 2px rgba(41, 37, 36, 0.04);
+  --shadow-float: 0 16px 36px -6px rgba(180, 83, 9, 0.12), 0 4px 14px rgba(41, 37, 36, 0.05);
+  --shadow-canvas: 0 24px 50px -12px rgba(180, 83, 9, 0.14), 0 6px 20px rgba(41, 37, 36, 0.06);
 
-  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.25s ease;
+  --transition-fast: 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-normal: 0.28s ease;
 }
 
 /* Dark mode support */
 [data-theme="dark"] {
-  --bg-app: #090d16;
-  --bg-card: #131824;
-  --bg-toolbar: #182030;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-active: #3b82f6;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-light: #64748b;
-  --brand-blue-light: rgba(37, 99, 235, 0.15);
-  --shadow-canvas: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --bg-app: #1c1917; /* warm deep chocolate */
+  --bg-card: #292524;
+  --bg-toolbar: rgba(41, 37, 36, 0.94);
+  --border-color: rgba(254, 243, 199, 0.12);
+  --border-hover: rgba(254, 243, 199, 0.2);
+  --border-active: #f59e0b;
+  --text-main: #fef3c7;
+  --text-muted: #d6d3d1;
+  --text-light: #a8a29e;
+  --brand-blue: #f59e0b;
+  --brand-blue-hover: #fbbf24;
+  --brand-blue-light: rgba(245, 158, 11, 0.18);
+  --shadow-canvas: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
 /* Reset */
@@ -60,6 +82,10 @@ html, body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(254, 243, 199, 0.5) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(254, 215, 170, 0.35) 0px, transparent 50%);
+  background-attachment: fixed;
 }
 
 button {
@@ -97,9 +123,10 @@ button {
    Navbar
    ========================================================================== */
 .navbar {
-  height: 64px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
+  height: 68px;
+  background: var(--bg-toolbar);
+  border-bottom: 1.5px solid var(--border-color);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -126,52 +153,59 @@ button {
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+.brand-logo:hover {
+  transform: scale(1.03);
 }
 
 .brand-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--brand-blue);
-  color: white;
-  border-radius: var(--radius-md);
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #b45309;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.15);
 }
 
 .brand-name {
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: var(--text-main);
 }
 
 .brand-dot {
-  color: var(--text-muted);
+  color: var(--pudding-caramel);
 }
 .brand-ext {
-  color: var(--brand-blue);
+  color: var(--pudding-caramel-dark);
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .nav-link-btn {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
 }
 .nav-link-btn:hover {
   color: var(--text-main);
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(245, 158, 11, 0.08);
 }
 .nav-link-btn.active {
-  color: var(--brand-blue);
-  background: var(--brand-blue-light);
+  color: var(--pudding-caramel-dark);
+  background: var(--pudding-custard);
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.08);
 }
 
 .nav-right {
@@ -185,34 +219,39 @@ button {
   align-items: center;
   gap: 8px;
   font-size: 0.8rem;
-  font-weight: 600;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 5px 12px;
+  font-weight: 700;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 6px 14px;
   border-radius: var(--radius-full);
 }
 
 .dot-live {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
 }
 
 .btn-theme-toggle {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
 }
 .btn-theme-toggle:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--text-main);
+  background: var(--pudding-cream);
+  color: var(--pudding-caramel-dark);
+  border-color: #fcd34d;
+  transform: rotate(15deg);
 }
 
 /* ==========================================================================
@@ -245,60 +284,86 @@ button {
 
 .upload-hero {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
+}
+
+.hero-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  color: #b45309;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+  animation: heroPillFloat 3s ease-in-out infinite alternate;
+}
+
+@keyframes heroPillFloat {
+  from { transform: translateY(0); }
+  to { transform: translateY(-3px); }
 }
 
 .upload-headline {
-  font-size: 2.5rem;
+  font-size: 2.6rem;
   font-weight: 800;
   letter-spacing: -0.025em;
   margin-bottom: 10px;
+  color: var(--text-main);
 }
 
 .upload-subheadline {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--text-muted);
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: 1.5;
 }
 
 .upload-box-wrapper {
-  max-width: 600px;
+  max-width: 620px;
   width: 100%;
 }
 
 .upload-box {
   background: var(--bg-card);
-  border: 2px dashed #cbd5e1;
-  border-radius: var(--radius-xl);
+  border: 2px dashed #fcd34d;
+  border-radius: 28px;
   padding: 56px 32px;
   text-align: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 16px 36px -6px rgba(180, 83, 9, 0.1);
   transition: all var(--transition-normal);
   cursor: pointer;
 }
 
 .upload-box:hover, .upload-box.dragover {
-  border-color: var(--brand-blue);
-  background: var(--brand-blue-light);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-float);
+  border-color: var(--pudding-caramel);
+  background: #fffdf5;
+  transform: translateY(-3px);
+  box-shadow: 0 20px 42px -8px rgba(217, 119, 6, 0.18);
 }
 
 .btn-cta-blue {
-  background: var(--brand-blue);
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
   color: white;
   font-weight: 700;
   font-size: 1.05rem;
-  padding: 16px 36px;
+  padding: 16px 38px;
   border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 8px 24px -2px rgba(234, 88, 12, 0.35);
+  transition: all var(--transition-fast);
 }
 .btn-cta-blue:hover {
-  background: var(--brand-blue-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.45);
+  background: linear-gradient(135deg, #d97706 0%, #c2410c 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px -2px rgba(234, 88, 12, 0.45);
 }
 
 .upload-or-text {
@@ -315,12 +380,13 @@ button {
 }
 
 .upload-kbd-hint kbd {
-  background: rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 2px 6px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 6px;
+  padding: 3px 8px;
   font-size: 0.76rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Samples Tray */
@@ -331,9 +397,9 @@ button {
 
 .sample-title {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 14px;
 }
 
@@ -341,6 +407,7 @@ button {
   display: flex;
   justify-content: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .sample-pill-btn {
@@ -348,25 +415,91 @@ button {
   align-items: center;
   gap: 10px;
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  padding: 6px 14px 6px 8px;
+  border: 1.5px solid var(--border-color);
+  padding: 6px 16px 6px 8px;
   border-radius: var(--radius-full);
   font-size: 0.84rem;
   font-weight: 600;
   color: var(--text-main);
   box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
 }
 .sample-pill-btn:hover {
-  border-color: var(--brand-blue);
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-float);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
 }
-
 .sample-pill-btn img {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* Pudding Signature Features Grid */
+.pudding-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 36px;
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .pudding-features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 20px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 4px 14px rgba(180, 83, 9, 0.05);
+  transition: all var(--transition-fast);
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  border-color: #fcd34d;
+  box-shadow: 0 8px 20px rgba(217, 119, 6, 0.12);
+  background: #fffdfa;
+}
+
+.feature-icon-wrapper {
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+}
+
+.feature-text {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.feature-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 /* ==========================================================================
@@ -417,7 +550,7 @@ button {
 
 .proc-progress-bar {
   height: 8px;
-  background: var(--border-color);
+  background: #f5ede2;
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -425,20 +558,20 @@ button {
 .proc-progress-track {
   height: 100%;
   width: 20%;
-  background: var(--brand-blue);
+  background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%);
   border-radius: var(--radius-full);
   transition: width 0.3s ease;
 }
 
 /* ==========================================================================
-   Screen 3: Remove.bg Studio Screen
+   Screen 3: Pudding Studio Screen (The Pudding Island)
    ========================================================================== */
 #studio-screen {
   position: relative;
   padding-bottom: 96px; /* Space for bottom gallery tray */
 }
 
-/* Top Action Bar (Identik dengan di screenshot) */
+/* Top Action Bar (The Floating Pudding Island) */
 .top-action-bar-container {
   display: flex;
   flex-direction: column;
@@ -450,13 +583,14 @@ button {
 
 .top-action-bar {
   background: var(--bg-toolbar);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius-full);
-  box-shadow: var(--shadow-float);
-  padding: 6px 10px;
+  box-shadow: 0 12px 32px -4px rgba(180, 83, 9, 0.12), 0 2px 8px rgba(41, 37, 36, 0.04);
+  padding: 6px 12px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  backdrop-filter: blur(14px);
 }
 
 .action-tab-btn {
@@ -466,19 +600,22 @@ button {
   padding: 8px 16px;
   border-radius: var(--radius-full);
   font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text-main);
+  font-weight: 700;
+  color: var(--text-muted);
 }
 .action-tab-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--text-main);
 }
 .action-tab-btn.active {
-  background: var(--brand-blue-light);
-  color: var(--brand-blue);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);
+  border: 1px solid #fcd34d;
 }
 
 .action-bar-divider {
-  width: 1px;
+  width: 1.5px;
   height: 22px;
   background: var(--border-color);
   margin: 0 4px;
@@ -492,17 +629,20 @@ button {
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
+  border: 1px solid transparent;
 }
 .action-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(245, 158, 11, 0.08);
   color: var(--text-main);
+  border-color: var(--border-color);
 }
 .action-icon-btn.active {
-  background: var(--brand-blue-light);
-  color: var(--brand-blue);
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
 }
 
-/* Download Split Pill Button (Khas remove.bg) */
+/* Download Split Pill Button (Pudding Golden Caramel) */
 .download-split-dropdown {
   position: relative;
   display: inline-flex;
@@ -510,31 +650,33 @@ button {
 }
 
 .btn-download-primary {
-  background: var(--brand-blue);
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
   color: white;
   font-weight: 700;
   font-size: 0.88rem;
-  padding: 9px 18px;
+  padding: 10px 20px;
   border-top-left-radius: var(--radius-full);
   border-bottom-left-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.28);
 }
 .btn-download-primary:hover {
-  background: var(--brand-blue-hover);
+  background: linear-gradient(135deg, #d97706 0%, #c2410c 100%);
+  transform: translateY(-1px);
 }
 
 .btn-download-arrow {
-  background: var(--brand-blue);
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
   color: white;
-  padding: 9px 10px 9px 8px;
+  padding: 10px 12px 10px 10px;
   border-top-right-radius: var(--radius-full);
   border-bottom-right-radius: var(--radius-full);
-  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .btn-download-arrow:hover {
-  background: var(--brand-blue-hover);
+  background: linear-gradient(135deg, #d97706 0%, #c2410c 100%);
 }
 
 .download-menu {
@@ -570,7 +712,7 @@ button {
   border-bottom: none;
 }
 .menu-item:hover {
-  background: var(--brand-blue-light);
+  background: #fffbeb;
 }
 
 .menu-item-title {
@@ -596,22 +738,22 @@ button {
   flex: 1;
 }
 
-/* Tool Side Card (Matching remove.bg floating drawer) */
+/* Tool Side Card (Pudding Studio Card) */
 .tool-side-card {
-  width: 320px;
+  width: 324px;
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.06);
-  padding: 20px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 24px;
+  box-shadow: 0 20px 45px -8px rgba(180, 83, 9, 0.12), 0 4px 16px rgba(41, 37, 36, 0.04);
+  padding: 22px;
   position: relative;
   flex-shrink: 0;
-  animation: sideCardIn 0.22s ease-out;
+  animation: sideCardIn 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 45;
 }
 
 @keyframes sideCardIn {
-  from { opacity: 0; transform: translateX(14px); }
+  from { opacity: 0; transform: translateX(16px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
@@ -623,8 +765,8 @@ button {
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -632,13 +774,16 @@ button {
   font-size: 1.3rem;
   line-height: 1;
   color: var(--text-muted);
-  background: transparent;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 .side-card-close-btn:hover {
-  background: var(--bg-app);
-  color: var(--text-main);
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+  transform: rotate(90deg);
 }
 
 /* Header Banner inside side card */
@@ -646,31 +791,35 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
-  padding-right: 20px;
+  margin-bottom: 20px;
+  padding-right: 24px;
 }
 .banner-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  color: var(--brand-blue);
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #b45309;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+}
+.pudding-banner-icon {
+  font-size: 24px;
 }
 .banner-title {
-  font-size: 0.96rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: var(--text-main);
   line-height: 1.2;
 }
 .banner-desc {
   font-size: 0.74rem;
   color: var(--text-muted);
-  line-height: 1.3;
-  margin-top: 2px;
+  line-height: 1.35;
+  margin-top: 3px;
 }
 
 /* Cutout Mode Grid */
@@ -687,13 +836,13 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 6px;
-  border-radius: 14px;
+  padding: 14px 6px;
+  border-radius: 18px;
   border: 1.5px solid var(--border-color);
   background: var(--bg-app);
   color: var(--text-muted);
-  font-size: 0.74rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -702,18 +851,19 @@ button {
   border-color: var(--border-hover);
   color: var(--text-main);
   background: #ffffff;
+  transform: translateY(-2px);
 }
 
 .cutout-mode-box.active {
-  border-color: var(--brand-blue);
-  background: #eff6ff;
-  color: var(--brand-blue);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.16);
 }
 
 .mode-icon-circle {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -721,33 +871,36 @@ button {
   transition: transform var(--transition-fast);
 }
 .cutout-mode-box:hover .mode-icon-circle {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .mode-icon-circle.red {
-  background: #fee2e2;
-  color: #ef4444;
+  background: #ffe4e6;
+  color: #e11d48;
 }
 .mode-icon-circle.blue {
-  background: #dbeafe;
-  color: #2563eb;
+  background: #fef3c7;
+  color: #d97706;
 }
 .mode-icon-circle.purple {
-  background: #f3e8ff;
-  color: #9333ea;
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .cutout-mode-box.active .mode-icon-circle.red {
-  background: #ef4444;
+  background: #e11d48;
   color: white;
+  box-shadow: 0 3px 10px rgba(225, 29, 72, 0.35);
 }
 .cutout-mode-box.active .mode-icon-circle.blue {
-  background: #2563eb;
+  background: #d97706;
   color: white;
+  box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
 }
 .cutout-mode-box.active .mode-icon-circle.purple {
-  background: #9333ea;
+  background: #7c3aed;
   color: white;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.35);
 }
 
 /* Fields & Sliders inside Side Card */
@@ -1083,9 +1236,10 @@ button {
   position: relative;
   max-width: 820px;
   max-height: 520px;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   overflow: hidden;
-  box-shadow: var(--shadow-canvas);
+  box-shadow: 0 20px 48px -10px rgba(180, 83, 9, 0.16), 0 4px 16px rgba(41, 37, 36, 0.05);
+  border: 1.5px solid var(--border-color);
   background: #ffffff;
   display: flex;
   align-items: center;
@@ -1093,16 +1247,16 @@ button {
   user-select: none;
 }
 
-/* Checkerboard Transparency */
+/* Checkerboard Transparency (Warm Milk & Custard Dessert Squares) */
 .canvas-checkerboard {
   position: absolute;
   inset: 0;
-  background-color: #f8fafc;
+  background-color: #fbf9f5;
   background-image: 
-    linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
-    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
-    linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
-    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+    linear-gradient(45deg, #ede5d8 25%, transparent 25%), 
+    linear-gradient(-45deg, #ede5d8 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #ede5d8 75%), 
+    linear-gradient(-45deg, transparent 75%, #ede5d8 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   z-index: 1;

@@ -26,8 +26,8 @@
               <span class="brand-name">Pudding<span class="brand-dot">.</span><span class="brand-ext">bg</span></span>
             </div>
             <nav class="nav-links">
-              <button class="nav-link-btn active" id="nav-btn-upload">Unggahan</button>
-              <button class="nav-link-btn" id="nav-btn-batch">Pengeditan Banyak Gambar</button>
+              <button class="nav-link-btn active" id="nav-btn-upload">🍮 Studio Potong</button>
+              <button class="nav-link-btn" id="nav-btn-batch">🥞 Multi-Foto (Batch)</button>
             </nav>
           </div>
 
@@ -48,8 +48,12 @@
         <!-- 1. EMPTY / UPLOAD STATE -->
         <section id="upload-screen" class="screen-view active">
           <div class="upload-hero">
-            <h1 class="upload-headline">Hapus Latar Belakang Gambar</h1>
-            <p class="upload-subheadline">100% otomatis, tanpa watermark, dan gratis langsung di browser Anda</p>
+            <div class="hero-brand-pill">
+              <span class="pudding-icon">🍮</span>
+              <span>Pudding.bg • Cepat, Halus & Tanpa Watermark</span>
+            </div>
+            <h1 class="upload-headline">Hapus Background Sehalus Puding</h1>
+            <p class="upload-subheadline">AI pemotong foto instan & pembuat stiker WhatsApp otomatis — 100% gratis dan privat di browsermu</p>
           </div>
 
           <div class="upload-box-wrapper">
@@ -61,10 +65,10 @@
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                   </svg>
-                  <span>Unggah Gambar</span>
+                  <span>Pilih Foto Kamu 🍮</span>
                 </button>
-                <div class="upload-or-text">atau seret & letakkan file di sini</div>
-                <div class="upload-kbd-hint">Bisa langsung paste dengan <kbd>Ctrl</kbd> + <kbd>V</kbd></div>
+                <div class="upload-or-text">atau seret & letakkan foto di sini</div>
+                <div class="upload-kbd-hint">Bisa langsung tempel dengan <kbd>Ctrl</kbd> + <kbd>V</kbd></div>
               </div>
             </div>
 
@@ -84,6 +88,38 @@
                   <img src="/samples/cat.jpg" alt="Kucing" />
                   <span>Hewan Lucu</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- Pudding Signature Value Props -->
+            <div class="pudding-features-grid">
+              <div class="feature-card">
+                <div class="feature-icon-wrapper">🍮</div>
+                <div class="feature-text">
+                  <h4 class="feature-title">Sehalus Tekstur Puding</h4>
+                  <p class="feature-desc">AI otomatis memotong tepi rambut, pakaian, dan bulu halus tanpa gerigi kaku.</p>
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon-wrapper">💬</div>
+                <div class="feature-text">
+                  <h4 class="feature-title">Buka di WhatsApp Langsung</h4>
+                  <p class="feature-desc">Format stiker 512×512px die-cut otomatis siap kirim & simpan ke favorit WA.</p>
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon-wrapper">🪄</div>
+                <div class="feature-text">
+                  <h4 class="feature-title">Kuas Puding & Tembak Warna</h4>
+                  <p class="feature-desc">Hapus background membandel atau pulihkan bagian gambar hanya dengan 1 sentuhan.</p>
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon-wrapper">🔒</div>
+                <div class="feature-text">
+                  <h4 class="feature-title">100% Privat di Browser</h4>
+                  <p class="feature-desc">Foto tidak pernah diunggah ke server mana pun. Gratis, tanpa watermark.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -111,7 +147,7 @@
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="m14.5 4-2.5 5 4 2 2.5-5zM6 16l6-6M3 21l3-3M3 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
                 </svg>
-                <span>Potongan</span>
+                <span>Kuas Puding</span>
               </button>
 
               <!-- Tool 2: Latar Belakang -->
@@ -121,7 +157,7 @@
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                <span>Latar Belakang</span>
+                <span>Latar Manis</span>
               </button>
 
               <!-- Tool 3: Efek (Shadow & Glow) -->
@@ -130,7 +166,7 @@
                   <circle cx="12" cy="12" r="9"/>
                   <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>
                 </svg>
-                <span>Efek</span>
+                <span>Bayangan 3D</span>
               </button>
 
               <!-- Tool 4: Stiker WhatsApp -->
@@ -176,7 +212,7 @@
               <!-- Tool 8: Unduh (Download Button with Dropdown) -->
               <div class="download-split-dropdown">
                 <button type="button" class="btn-download-primary" id="btn-main-download">
-                  <span>Unduh</span>
+                  <span>Simpan / Unduh 🍮</span>
                 </button>
                 <button type="button" class="btn-download-arrow" id="btn-download-options-toggle" title="Opsi Format Unduhan">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -275,11 +311,11 @@
               <div class="tool-card-content hidden" id="panel-cutout">
                 <div class="side-card-header-banner">
                   <div class="banner-avatar">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14.5 4-2.5 5 4 2 2.5-5zM6 16l6-6M3 21l3-3M3 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                    <span class="pudding-banner-icon">🍮</span>
                   </div>
                   <div>
-                    <h4 class="banner-title">Kuas Ajaib</h4>
-                    <p class="banner-desc">Hapus, pulihkan, atau tembak warna dengan mudah</p>
+                    <h4 class="banner-title">Kuas Puding & Tembak</h4>
+                    <p class="banner-desc">Potong sehalus karamel, hapus warna sekali sentuh</p>
                   </div>
                 </div>
 
@@ -356,16 +392,17 @@
 
                 <div class="bg-sub-strip hidden" id="strip-color">
                   <div class="swatches-flow">
-                    <button type="button" class="swatch-btn active" data-color="#ffffff" style="background: #ffffff;" title="Putih"></button>
-                    <button type="button" class="swatch-btn" data-color="#f1f5f9" style="background: #f1f5f9;" title="Abu Terang"></button>
-                    <button type="button" class="swatch-btn" data-color="#0f172a" style="background: #0f172a;" title="Hitam Gelap"></button>
+                    <button type="button" class="swatch-btn active" data-color="#ffffff" style="background: #ffffff;" title="Putih Susu"></button>
+                    <button type="button" class="swatch-btn" data-color="#fffbeb" style="background: #fffbeb;" title="Krim Vanilla"></button>
+                    <button type="button" class="swatch-btn" data-color="#fef3c7" style="background: #fef3c7;" title="Karamel Custard"></button>
+                    <button type="button" class="swatch-btn" data-color="#ffe4e6" style="background: #ffe4e6;" title="Stroberi Manis"></button>
+                    <button type="button" class="swatch-btn" data-color="#dcfce7" style="background: #dcfce7;" title="Matcha Latte"></button>
+                    <button type="button" class="swatch-btn" data-color="#e0f2fe" style="background: #e0f2fe;" title="Biru Awan"></button>
                     <button type="button" class="swatch-btn" data-color="#2563eb" style="background: #2563eb;" title="Biru Paspor"></button>
-                    <button type="button" class="swatch-btn" data-color="#dc2626" style="background: #dc2626;" title="Merah SKCK"></button>
-                    <button type="button" class="swatch-btn" data-color="#16a34a" style="background: #16a34a;" title="Hijau"></button>
-                    <button type="button" class="swatch-btn" data-color="#f59e0b" style="background: #f59e0b;" title="Kuning Amber"></button>
-                    <button type="button" class="swatch-btn" data-color="#ec4899" style="background: #ec4899;" title="Pink"></button>
+                    <button type="button" class="swatch-btn" data-color="#dc2626" style="background: #dc2626;" title="Merah Paspor / SKCK"></button>
+                    <button type="button" class="swatch-btn" data-color="#292524" style="background: #292524;" title="Cokelat Espresso"></button>
                     <label class="swatch-btn swatch-custom-picker" title="Pilih Warna Bebas">
-                      <input type="color" id="native-color-picker" value="#2563eb" />
+                      <input type="color" id="native-color-picker" value="#f59e0b" />
                       <span>+</span>
                     </label>
                   </div>
@@ -373,11 +410,12 @@
 
                 <div class="bg-sub-strip hidden" id="strip-gradient">
                   <div class="swatches-flow">
-                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></button>
-                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);"></button>
-                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #0ba360 0%, #3cba92 100%)" style="background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);"></button>
-                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></button>
-                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #141e30 0%, #243b55 100%)" style="background: linear-gradient(135deg, #141e30 0%, #243b55 100%);"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #f59e0b 100%)" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #f59e0b 100%);" title="Sunrise Puding"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #ffe4e6 100%)" style="background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #ffe4e6 100%);" title="Berry Custard"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #059669 0%, #34d399 50%, #d1fae5 100%)" style="background: linear-gradient(135deg, #059669 0%, #34d399 50%, #d1fae5 100%);" title="Matcha Mousse"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)" style="background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);" title="Caramel Honey"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);" title="Lavender Sweet"></button>
+                    <button type="button" class="swatch-btn" data-gradient="linear-gradient(135deg, #292524 0%, #1c1917 100%)" style="background: linear-gradient(135deg, #292524 0%, #1c1917 100%);" title="Dark Cocoa"></button>
                   </div>
                 </div>
 
