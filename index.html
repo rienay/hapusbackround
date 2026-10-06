@@ -292,8 +292,8 @@
                   <span id="checker-btn-icon">🏁</span>
                   <span id="checker-btn-label">Latar: Putih</span>
                 </button>
-                <button type="button" class="canvas-floating-btn" id="btn-clean-dots-floating" title="Sapu bersih titik-titik sisa dan bercak putih">
-                  <span>🧹 Bersihkan Titik Sisa</span>
+                <button type="button" class="canvas-floating-btn" id="btn-heal-and-clean-floating" title="Bersihkan titik-titik sisa & tambal lubang di dalam gambar">
+                  <span>✨ Rapikan Gambar</span>
                 </button>
               </div>
             </div>
@@ -350,10 +350,10 @@
                   <div class="side-card-field">
                     <div class="field-header">
                       <span>Kepekaan Warna (Toleransi)</span>
-                      <span id="color-tolerance-display">25%</span>
+                      <span id="color-tolerance-display">15%</span>
                     </div>
-                    <input type="range" id="color-tolerance-input" min="1" max="75" value="25" />
-                    <div class="field-hint-text">💡 <strong>Cara pakai:</strong> Cukup klik pada titik background di gambar untuk melenyapkan warna tersebut.</div>
+                    <input type="range" id="color-tolerance-input" min="1" max="75" value="15" />
+                    <div class="field-hint-text">💡 <strong>Cara pakai:</strong> Cukup klik pada background untuk melenyapkan warna tersebut. Toleransi 15% menjaga warna objek tetap utuh.</div>
                   </div>
                   <div class="side-card-toggle-row mt-8">
                     <label class="toggle-switch">
@@ -363,6 +363,16 @@
                     <div>
                       <div class="toggle-title">Area Terhubung Saja</div>
                       <div class="toggle-sub">Hanya warna yang menyambung (tidak merusak objek)</div>
+                    </div>
+                  </div>
+                  <div class="side-card-toggle-row mt-8">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="check-protect-holes" checked />
+                      <span class="slider round"></span>
+                    </label>
+                    <div>
+                      <div class="toggle-title">Lindungi Objek (Anti-Lubang)</div>
+                      <div class="toggle-sub">Cegah warna di dalam huruf / gambar ikut berlubang</div>
                     </div>
                   </div>
                   <div class="side-card-toggle-row mt-8">
@@ -428,8 +438,8 @@
 
                 <!-- Bottom Actions -->
                 <div class="side-card-actions mt-16" style="display: flex; flex-direction: column; gap: 8px;">
-                  <button type="button" class="btn-clean-dots-full" id="btn-clean-dots-panel">
-                    <span>🧹 Bersihkan Titik & Bercak Sisa</span>
+                  <button type="button" class="btn-clean-dots-full" id="btn-heal-and-clean-panel" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1.5px solid #f59e0b; color: #92400e; font-weight: 800;">
+                    <span>✨ Rapikan Rapi: Bersihkan Titik & Tambal Lubang</span>
                   </button>
                   <button type="button" class="btn-subtle-full" id="btn-reset-cutout">
                     <span>↺ Reset ke Foto Asli Awal</span>

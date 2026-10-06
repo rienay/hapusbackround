@@ -18,11 +18,12 @@ const appState = {
   // Cutout Methods State (4 Tools: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan)
   cutoutMode: 'color-wand', // 'color-wand' | 'restore-wand' | 'erase' | 'restore'
   brushSize: 30,
-  colorTolerance: 25,
+  colorTolerance: 15,
   isContiguousColor: true,
   restoreTolerance: 25,
   isContiguousRestore: true,
   restoreFillType: 'color', // 'color' | 'all-transparent'
+  protectHoles: true,
   isPainting: false,
   lastPaintPos: null,
 
@@ -162,11 +163,12 @@ const els = {
   btnToggleChecker: document.getElementById('btn-toggle-checker'),
   checkerBtnIcon: document.getElementById('checker-btn-icon'),
   checkerBtnLabel: document.getElementById('checker-btn-label'),
-  btnCleanDotsFloating: document.getElementById('btn-clean-dots-floating'),
+  btnHealAndCleanFloating: document.getElementById('btn-heal-and-clean-floating'),
 
-  // Cutout Despeckle Controls
+  // Cutout Despeckle & Protect Controls
+  checkProtectHoles: document.getElementById('check-protect-holes'),
   checkAutoDespeckle: document.getElementById('check-auto-despeckle'),
-  btnCleanDotsPanel: document.getElementById('btn-clean-dots-panel'),
+  btnHealAndCleanPanel: document.getElementById('btn-heal-and-clean-panel'),
 
   // Background Panel Transparent Options
   stripTransparent: document.getElementById('strip-transparent'),
@@ -659,12 +661,90 @@ function cleanStrayArtifacts(canvas, options = {}) {
   return cleanedCount;
 }
 
-function runCleanStrayArtifactsAction() {
+function healObjectHoles(canvas, originalCanvas, maxHoleSize = 250) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const origCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+  const origData = origCtx.getImageData(0, 0, w, h).data;
+
+  // Find transparent pockets (alpha < 120) completely enclosed inside opaque regions (punctured holes)
+  const visited = new Uint8Array(w * h);
+  let healedCount = 0;
+
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const pos = y * w + x;
+      const idx = pos * 4;
+
+      if (visited[pos] || data[idx + 3] > 120) continue;
+
+      const component = [x, y];
+      visited[pos] = 1;
+      let head = 0;
+      let touchesBorder = false;
+
+      while (head < component.length) {
+        const cx = component[head++];
+        const cy = component[head++];
+
+        if (cx <= 1 || cx >= w - 2 || cy <= 1 || cy >= h - 2) {
+          touchesBorder = true;
+        }
+
+        const neighbors = [
+          [cx + 1, cy],
+          [cx - 1, cy],
+          [cx, cy + 1],
+          [cx, cy - 1]
+        ];
+
+        for (let i = 0; i < 4; i++) {
+          const nx = neighbors[i][0];
+          const ny = neighbors[i][1];
+          if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+            const nPos = ny * w + nx;
+            if (!visited[nPos] && data[nPos * 4 + 3] <= 120) {
+              visited[nPos] = 1;
+              component.push(nx, ny);
+            }
+          }
+        }
+      }
+
+      const pixelCount = component.length / 2;
+      // If it doesn't touch canvas borders and is smaller than maxHoleSize, it's an accidental hole inside an object!
+      if (!touchesBorder && pixelCount <= maxHoleSize) {
+        for (let k = 0; k < component.length; k += 2) {
+          const hx = component[k];
+          const hy = component[k + 1];
+          const hIdx = (hy * w + hx) * 4;
+          data[hIdx] = origData[hIdx];
+          data[hIdx + 1] = origData[hIdx + 1];
+          data[hIdx + 2] = origData[hIdx + 2];
+          data[hIdx + 3] = origData[hIdx + 3];
+          healedCount++;
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return healedCount;
+}
+
+function tidyImageComplete() {
   const item = getActiveItem();
   if (!item) return;
 
   const canvas = els.brushCanvas;
-  const count = cleanStrayArtifacts(canvas, { thresholdAlpha: 30 });
+  // 1. Heal punctured holes inside letters/objects from pristine original
+  const healed = healObjectHoles(canvas, item.originalCanvas, 350);
+  // 2. Clear isolated stray dots and floating specks in background
+  const cleaned = cleanStrayArtifacts(canvas, { thresholdAlpha: 30 });
 
   // Sync to workingCanvas
   const workCtx = item.workingCanvas.getContext('2d');
@@ -677,10 +757,10 @@ function runCleanStrayArtifactsAction() {
   item.redoStack = [];
 
   updateActiveThumb();
-  if (count > 0) {
-    showToast(`🧹 Berhasil membersihkan ${count.toLocaleString()} titik & bercak sisa!`);
+  if (healed > 0 || cleaned > 0) {
+    showToast(`✨ Gambar rapi! ${healed.toLocaleString()} lubang ditambal & ${cleaned.toLocaleString()} titik sisa dibersihkan.`);
   } else {
-    showToast('✨ Foto sudah bersih, tidak ada titik sisa yang terdeteksi.');
+    showToast('✨ Gambar sudah rapi dan bersih.');
   }
 }
 
@@ -722,14 +802,13 @@ function shootColor(ix, iy) {
   }
 
   // Tolerance thresholds
-  const maxDist = (appState.colorTolerance / 100) * 380;
+  const maxDist = (appState.colorTolerance / 100) * 360;
   const featherDist = maxDist * 1.25; // Soft anti-alias edge falloff zone
 
   let erasedCount = 0;
-  const isWhiteBg = (targetR > 215 && targetG > 215 && targetB > 215);
 
   if (appState.isContiguousColor) {
-    // Smart Contiguous Flood Fill (BFS)
+    // Smart Contiguous Flood Fill (BFS) with Edge Barrier
     const visited = new Uint8Array(w * h);
     const queue = [ix, iy];
     visited[iy * w + ix] = 1;
@@ -766,19 +845,19 @@ function shootColor(ix, iy) {
             const a = data[nIdx + 3];
 
             if (a > 0) {
+              // Edge barrier: prevent crossing strong contrast outlines
+              const stepDiff = Math.abs(r - data[idx]) + Math.abs(g - data[idx + 1]) + Math.abs(b - data[idx + 2]);
+              if (stepDiff > 115) {
+                continue;
+              }
+
               const dist = calcColorDist(r, g, b);
               if (dist <= maxDist) {
                 queue.push(nx, ny);
               } else if (dist <= featherDist) {
-                // Soft edge transition to prevent harsh white halos
+                // Soft edge transition (only soften alpha, never tint RGB black!)
                 const factor = (dist - maxDist) / (featherDist - maxDist);
                 data[nIdx + 3] = Math.min(data[nIdx + 3], Math.round(255 * factor));
-                if (isWhiteBg) {
-                  // Suppress white halo bleed on perimeter
-                  data[nIdx] = Math.round(data[nIdx] * factor);
-                  data[nIdx + 1] = Math.round(data[nIdx + 1] * factor);
-                  data[nIdx + 2] = Math.round(data[nIdx + 2] * factor);
-                }
               }
             }
           }
@@ -786,7 +865,7 @@ function shootColor(ix, iy) {
       }
     }
   } else {
-    // Global Color Erase: Erase all matching pixels across whole image
+    // Global Color Erase: Erase matching pixels
     const totalPixels = w * h;
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
@@ -805,7 +884,12 @@ function shootColor(ix, iy) {
 
   ctx.putImageData(imgData, 0, 0);
 
-  // Auto despeckle / clean stray dots if enabled
+  // Auto protect holes inside objects if enabled
+  if (appState.protectHoles) {
+    healObjectHoles(canvas, item.originalCanvas, 150);
+  }
+
+  // Auto despeckle / clean stray dots in background if enabled
   if (appState.autoDespeckle) {
     cleanStrayArtifacts(canvas, { thresholdAlpha: 20 });
   }
@@ -1872,11 +1956,17 @@ function setupEventListeners() {
     els.btnCheckerSegmentDark.addEventListener('click', () => setCheckerboardTheme('dark'));
   }
 
-  if (els.btnCleanDotsFloating) {
-    els.btnCleanDotsFloating.addEventListener('click', runCleanStrayArtifactsAction);
+  if (els.btnHealAndCleanFloating) {
+    els.btnHealAndCleanFloating.addEventListener('click', tidyImageComplete);
   }
-  if (els.btnCleanDotsPanel) {
-    els.btnCleanDotsPanel.addEventListener('click', runCleanStrayArtifactsAction);
+  if (els.btnHealAndCleanPanel) {
+    els.btnHealAndCleanPanel.addEventListener('click', tidyImageComplete);
+  }
+
+  if (els.checkProtectHoles) {
+    els.checkProtectHoles.addEventListener('change', (e) => {
+      appState.protectHoles = e.target.checked;
+    });
   }
 
   if (els.checkAutoDespeckle) {
