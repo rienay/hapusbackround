@@ -309,8 +309,47 @@
                   </div>
                 </div>
 
+                <!-- CARA 1: HAPUS OTOMATIS (AI U-2-NET & ALPHA MATTING) -->
+                <div class="cutout-section-card mb-14" style="background: rgba(254, 243, 199, 0.45); border: 1.5px solid #fde68a; border-radius: 12px; padding: 12px;">
+                  <div class="section-card-header mb-8" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span class="method-num" style="background: #f59e0b; color: white; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">1</span>
+                      <span class="method-label" style="font-weight: 700; font-size: 0.85rem; color: #92400e;">Hapus Otomatis (AI Presisi)</span>
+                    </div>
+                    <span style="font-size: 0.65rem; background: #ea580c; color: white; padding: 2px 7px; border-radius: 6px; font-weight: 600;">U-2-Net</span>
+                  </div>
+                  <p class="section-card-desc mb-10" style="font-size: 0.74rem; color: #78350f; line-height: 1.35; margin: 0 0 10px 0;">Akurasi tinggi selevel backgroundremover dengan U-2-Net Deep Learning & Closed-Form Alpha Matting.</p>
+
+                  <!-- Pilihan Model & Alpha Matting -->
+                  <div class="ai-controls-group mb-10" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <div>
+                      <label style="font-size: 0.72rem; font-weight: 600; color: #78350f; display: block; margin-bottom: 4px;">Pilihan Model AI:</label>
+                      <select id="ai-model-select" style="width: 100%; font-size: 0.75rem; padding: 6px 8px; border-radius: 6px; border: 1px solid #d97706; background: white; font-weight: 500; color: #1e293b;">
+                        <option value="isnet-general-use" selected>⭐ IS-Net Ultra (Akurat & Detail Seperti Remove.bg)</option>
+                        <option value="u2net">U-2-Net (Standar Umum)</option>
+                        <option value="u2net_human_seg">U-2-Net Human (Potret Orang & Model)</option>
+                        <option value="u2netp">U-2-Net Small (Cepat & Ringan)</option>
+                      </select>
+                    </div>
+
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: #78350f; cursor: pointer; user-select: none;">
+                      <input type="checkbox" id="ai-check-alpha-matting" checked style="accent-color: #ea580c; width: 15px; height: 15px;" />
+                      <span><strong>Alpha Matting</strong> (tepi rambut halus & anti-halo putih)</span>
+                    </label>
+                  </div>
+
+                  <button type="button" class="btn-cta-run-ai" id="btn-run-ai-bg">
+                    <span class="ai-btn-icon">⚡</span>
+                    <span id="btn-run-ai-text">Jalankan Hapus Otomatis (AI)</span>
+                  </button>
+                  <div class="ai-progress-mini hidden" id="ai-progress-mini">
+                    <div class="ai-progress-mini-bar" id="ai-progress-mini-bar"></div>
+                  </div>
+                  <div id="ai-status-hint" style="font-size: 0.7rem; color: #92400e; margin-top: 6px; display: none;"></div>
+                </div>
+
                 <div class="section-card-header mb-10">
-                  <span class="method-label">Pilih Alat Potong & Pulihkan:</span>
+                  <span class="method-label">Atau Sentuhan Manual (4 Alat Presisi):</span>
                 </div>
 
                 <!-- Mode Selector Grid (4 Alat: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan) -->

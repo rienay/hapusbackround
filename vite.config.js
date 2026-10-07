@@ -6,6 +6,16 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       port: 3000,
+      proxy: {
+        '/api/remove-bg': {
+          target: 'http://127.0.0.1:5005',
+          changeOrigin: true,
+        },
+        '/api/health': {
+          target: 'http://127.0.0.1:5005',
+          changeOrigin: true,
+        },
+      },
       headers: {
         'Cross-Origin-Opener-Policy': 'same-origin',
         'Cross-Origin-Embedder-Policy': 'require-corp',

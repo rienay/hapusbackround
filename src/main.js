@@ -69,7 +69,15 @@ const els = {
   toolCardContents: document.querySelectorAll('.tool-card-content'),
   btnCloseSideCard: document.getElementById('btn-close-side-card'),
 
-  // Cutout Tools (4 Tools)
+  // Cutout Tools (AI & Manual)
+  btnRunAiBg: document.getElementById('btn-run-ai-bg'),
+  btnRunAiText: document.getElementById('btn-run-ai-text'),
+  aiProgressMini: document.getElementById('ai-progress-mini'),
+  aiProgressMiniBar: document.getElementById('ai-progress-mini-bar'),
+  aiModelSelect: document.getElementById('ai-model-select'),
+  aiCheckAlphaMatting: document.getElementById('ai-check-alpha-matting'),
+  aiStatusHint: document.getElementById('ai-status-hint'),
+
   toolSelectBtns: document.querySelectorAll('.tool-select-btn'),
   subControlsColorWand: document.getElementById('sub-controls-color-wand'),
   subControlsRestoreWand: document.getElementById('sub-controls-restore-wand'),
@@ -826,6 +834,112 @@ function tidyImageComplete() {
 
   updateActiveThumb();
   showToast('✨ Gambar rapi! Halo putih dibersihkan & tepi outline dihaluskan.');
+}
+
+/* ==========================================================================
+   CARA 1: Hapus Otomatis (AI U-2-Net & PyMatting Alpha Matting)
+   ========================================================================== */
+async function runAiBackgroundRemoval() {
+  const item = getActiveItem();
+  if (!item) {
+    showToast('Pilih foto terlebih dahulu.');
+    return;
+  }
+
+  const btn = els.btnRunAiBg;
+  const btnText = els.btnRunAiText;
+  const progressMini = els.aiProgressMini;
+  const progressBar = els.aiProgressMiniBar;
+  const statusHint = els.aiStatusHint;
+
+  const modelChoice = els.aiModelSelect ? els.aiModelSelect.value : 'isnet-general-use';
+  const alphaMatting = els.aiCheckAlphaMatting ? els.aiCheckAlphaMatting.checked : true;
+
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Memproses AI Presisi...';
+  if (progressMini) progressMini.classList.remove('hidden');
+  if (progressBar) progressBar.style.width = '20%';
+  if (statusHint) {
+    statusHint.style.display = 'block';
+    statusHint.textContent = '⏳ Mengirim gambar ke AI Engine...';
+  }
+
+  try {
+    // Convert originalCanvas to blob
+    const blob = await new Promise(resolve => item.originalCanvas.toBlob(resolve, 'image/png'));
+    const formData = new FormData();
+    formData.append('file', blob, `${item.name || 'image'}.png`);
+    formData.append('model', modelChoice);
+    formData.append('alpha_matting', alphaMatting ? 'true' : 'false');
+
+    if (progressBar) progressBar.style.width = '45%';
+    if (statusHint) statusHint.textContent = alphaMatting ? '🔬 Menganalisis subjek & Closed-Form Alpha Matting...' : '🔬 Menganalisis objek dengan U-2-Net...';
+
+    // Call /api/remove-bg
+    const response = await fetch('/api/remove-bg', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      let errMsg = 'Gagal memproses gambar';
+      try {
+        const errJson = await response.json();
+        errMsg = errJson.error || errMsg;
+      } catch (e) {
+        errMsg = `Error ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errMsg);
+    }
+
+    if (progressBar) progressBar.style.width = '85%';
+    if (statusHint) statusHint.textContent = '🎨 Merender hasil potong akurat ke studio...';
+
+    const resultBlob = await response.blob();
+    const resultImg = new Image();
+    const resultUrl = URL.createObjectURL(resultBlob);
+
+    await new Promise((res, rej) => {
+      resultImg.onload = res;
+      resultImg.onerror = rej;
+      resultImg.src = resultUrl;
+    });
+
+    // Draw onto item.workingCanvas
+    const workCtx = item.workingCanvas.getContext('2d');
+    workCtx.clearRect(0, 0, item.width, item.height);
+    workCtx.drawImage(resultImg, 0, 0, item.width, item.height);
+    URL.revokeObjectURL(resultUrl);
+
+    // Update brushCanvas
+    const dispCtx = els.brushCanvas.getContext('2d');
+    dispCtx.clearRect(0, 0, item.width, item.height);
+    dispCtx.drawImage(item.workingCanvas, 0, 0);
+
+    // Push snapshot
+    item.history.push(workCtx.getImageData(0, 0, item.width, item.height));
+    item.redoStack = [];
+
+    if (progressBar) progressBar.style.width = '100%';
+    updateActiveThumb();
+    showToast(`🎉 Selesai! Dipotong akurat dengan ${modelChoice.toUpperCase()}${alphaMatting ? ' + Alpha Matting' : ''}!`);
+    confetti({ particleCount: 35, spread: 60, origin: { y: 0.55 } });
+
+  } catch (err) {
+    console.error('AI removal error:', err);
+    if (statusHint) {
+      statusHint.innerHTML = `⚠️ <strong>Koneksi AI Server:</strong> Pastikan backend aktif.<br>Jalankan <code>run_ai_server.bat</code> atau <code>npm run ai-server</code>`;
+    }
+    showToast(`⚠️ AI Server: ${err.message || 'Gagal menghubungi backend AI'}`);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'Jalankan Hapus Otomatis (AI)';
+    setTimeout(() => {
+      if (progressMini) progressMini.classList.add('hidden');
+      if (progressBar) progressBar.style.width = '0%';
+      if (statusHint) statusHint.style.display = 'none';
+    }, 3500);
+  }
 }
 
 /* ==========================================================================
@@ -1817,6 +1931,11 @@ function setupEventListeners() {
       redoAction();
     }
   });
+
+  // CARA 1: AI Run Button
+  if (els.btnRunAiBg) {
+    els.btnRunAiBg.addEventListener('click', runAiBackgroundRemoval);
+  }
 
   // Cutout Mode Selector Buttons (Tembak Warna, Kuas Hapus, Pulihkan, Kotak Seleksi)
   els.toolSelectBtns.forEach(btn => {
