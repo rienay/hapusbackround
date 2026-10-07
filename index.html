@@ -381,13 +381,27 @@
 
                 <!-- Controls for Mode: Tembak Warna (Hapus) -->
                 <div class="tool-sub-controls" id="sub-controls-color-wand">
+                  <div class="side-card-field mb-10">
+                    <div class="field-header">
+                      <span>Cakupan Area Hapus</span>
+                    </div>
+                    <div class="segmented-control" id="color-type-segmented">
+                      <button type="button" class="segment-btn active" id="btn-color-target-contiguous" data-target="contiguous">
+                        🎯 Area Terhubung Saja
+                      </button>
+                      <button type="button" class="segment-btn" id="btn-color-target-global" data-target="global">
+                        🌐 Seluruh Foto
+                      </button>
+                    </div>
+                  </div>
+
                   <div class="side-card-field">
                     <div class="field-header">
                       <span>Kepekaan Warna (Toleransi)</span>
                       <span id="color-tolerance-display">25%</span>
                     </div>
                     <input type="range" id="color-tolerance-input" min="1" max="75" value="25" />
-                    <div class="field-hint-text">💡 <strong>Cara pakai:</strong> Cukup klik pada background untuk melenyapkan warna dan lubang huruf seketika tanpa bercak.</div>
+                    <div class="field-hint-text">💡 <strong>Cara pakai:</strong> Klik titik warna yang ingin dihapus. Presisi mengikuti warna & kotak/area yang dipilih.</div>
                   </div>
                 </div>
 

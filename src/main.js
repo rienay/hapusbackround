@@ -86,6 +86,7 @@ const els = {
   colorToleranceInput: document.getElementById('color-tolerance-input'),
   colorToleranceDisplay: document.getElementById('color-tolerance-display'),
   checkContiguousColor: document.getElementById('check-contiguous-color'),
+  colorTargetSegmentBtns: document.querySelectorAll('#color-type-segmented .segment-btn'),
 
   restoreToleranceInput: document.getElementById('restore-tolerance-input'),
   restoreToleranceDisplay: document.getElementById('restore-tolerance-display'),
@@ -970,150 +971,71 @@ function shootColor(ix, iy) {
     return;
   }
 
-  // Perceptual Redmean Color Distance
-  function calcColorDist(r, g, b) {
-    const rmean = (r + targetR) / 2;
+  // Toleransi Euclidean distance threshold (sama persis dengan rumus Pulihkan yang presisi)
+  const maxDist = (appState.colorTolerance / 100) * 441.67;
+
+  function isMatchTarget(r, g, b, a) {
+    if (a === 0) return false;
     const dr = r - targetR;
     const dg = g - targetG;
     const db = b - targetB;
-    return Math.sqrt((((512 + rmean) * dr * dr) >> 8) + 4 * dg * dg + (((767 - rmean) * db * db) >> 8));
+    return Math.sqrt(dr * dr + dg * dg + db * db) <= maxDist;
   }
 
-  // Toleransi adaptif yang presisi dan tajam
-  const tolFactor = Math.max(0.18, appState.colorTolerance / 100);
-  const maxDist = tolFactor * 390;
-  const featherDist = maxDist * 1.38;
-
   let erasedCount = 0;
-  const visited = new Uint8Array(w * h);
 
-  // 1. Flood Fill Utama dari Titik Klik (Menghapus seluruh latar luar)
-  const queue = [ix, iy];
-  visited[iy * w + ix] = 1;
-  let head = 0;
+  if (appState.isContiguousColor) {
+    // Smart Contiguous Flood Fill (BFS) - Presisi hanya pada area/kotak/kontur yang dipilih
+    const visited = new Uint8Array(w * h);
+    const queue = [ix, iy];
+    visited[iy * w + ix] = 1;
+    let head = 0;
 
-  while (head < queue.length) {
-    const cx = queue[head++];
-    const cy = queue[head++];
-    const idx = (cy * w + cx) * 4;
+    while (head < queue.length) {
+      const cx = queue[head++];
+      const cy = queue[head++];
+      const idx = (cy * w + cx) * 4;
 
-    if (data[idx + 3] > 0) {
-      data[idx + 3] = 0;
-      erasedCount++;
-    }
+      if (data[idx + 3] > 0) {
+        data[idx + 3] = 0;
+        erasedCount++;
+      }
 
-    const neighbors = [
-      [cx + 1, cy],
-      [cx - 1, cy],
-      [cx, cy + 1],
-      [cx, cy - 1]
-    ];
+      const neighbors = [
+        [cx + 1, cy],
+        [cx - 1, cy],
+        [cx, cy + 1],
+        [cx, cy - 1]
+      ];
 
-    for (let i = 0; i < 4; i++) {
-      const nx = neighbors[i][0];
-      const ny = neighbors[i][1];
-      if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-        const nPos = ny * w + nx;
-        if (!visited[nPos]) {
-          visited[nPos] = 1;
-          const nIdx = nPos * 4;
-          const r = data[nIdx];
-          const g = data[nIdx + 1];
-          const b = data[nIdx + 2];
-          const a = data[nIdx + 3];
-
-          if (a > 0) {
-            const dist = calcColorDist(r, g, b);
-            if (dist <= maxDist) {
+      for (let i = 0; i < 4; i++) {
+        const nx = neighbors[i][0];
+        const ny = neighbors[i][1];
+        if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+          const nPos = ny * w + nx;
+          if (!visited[nPos]) {
+            visited[nPos] = 1;
+            const nIdx = nPos * 4;
+            if (isMatchTarget(data[nIdx], data[nIdx + 1], data[nIdx + 2], data[nIdx + 3])) {
               queue.push(nx, ny);
-            } else if (dist <= featherDist) {
-              // Unblend cahaya background dari tepi gambar (menghilangkan halo putih)
-              const alpha = (dist - maxDist) / (featherDist - maxDist);
-              data[nIdx] = Math.max(0, Math.min(255, Math.round((r - (1 - alpha) * targetR) / alpha)));
-              data[nIdx + 1] = Math.max(0, Math.min(255, Math.round((g - (1 - alpha) * targetG) / alpha)));
-              data[nIdx + 2] = Math.max(0, Math.min(255, Math.round((b - (1 - alpha) * targetB) / alpha)));
-              data[nIdx + 3] = Math.min(a, Math.round(255 * alpha));
             }
           }
         }
       }
     }
-  }
-
-  // 2. Pembersihan Otomatis Lubang Huruf (P, D, D, O, A, B, dsb)
-  // Menemukan kantong warna latar yang terkurung outline huruf
-  for (let y = 1; y < h - 1; y++) {
-    for (let x = 1; x < w - 1; x++) {
-      const pos = y * w + x;
-      const idx = pos * 4;
-
-      if (visited[pos] || data[idx + 3] === 0) continue;
-
-      const dist = calcColorDist(data[idx], data[idx + 1], data[idx + 2]);
-      if (dist <= maxDist) {
-        const pocket = [x, y];
-        visited[pos] = 1;
-        let pHead = 0;
-        let touchesBorder = false;
-
-        while (pHead < pocket.length) {
-          const px = pocket[pHead++];
-          const py = pocket[pHead++];
-
-          if (px <= 1 || px >= w - 2 || py <= 1 || py >= h - 2) {
-            touchesBorder = true;
-          }
-
-          const pNeighbors = [
-            [px + 1, py],
-            [px - 1, py],
-            [px, py + 1],
-            [px, py - 1]
-          ];
-
-          for (let i = 0; i < 4; i++) {
-            const nx = pNeighbors[i][0];
-            const ny = pNeighbors[i][1];
-            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-              const nPos = ny * w + nx;
-              if (!visited[nPos] && data[nPos * 4 + 3] > 0) {
-                const nDist = calcColorDist(data[nPos * 4], data[nPos * 4 + 1], data[nPos * 4 + 2]);
-                if (nDist <= maxDist) {
-                  visited[nPos] = 1;
-                  pocket.push(nx, ny);
-                }
-              }
-            }
-          }
-        }
-
-        const pocketSize = pocket.length / 2;
-        // Jika kantong terkurung oleh outline huruf & memiliki warna latar putih
-        if (!touchesBorder && pocketSize >= 15 && pocketSize <= 28000) {
-          for (let k = 0; k < pocket.length; k += 2) {
-            const hx = pocket[k];
-            const hy = pocket[k + 1];
-            const hIdx = (hy * w + hx) * 4;
-            data[hIdx + 3] = 0;
-            erasedCount++;
-          }
-        }
+  } else {
+    // Global Erase: Hapus seluruh warna yang cocok di seluruh foto
+    const totalPixels = w * h;
+    for (let i = 0; i < totalPixels; i++) {
+      const idx = i * 4;
+      if (data[idx + 3] > 0 && isMatchTarget(data[idx], data[idx + 1], data[idx + 2], data[idx + 3])) {
+        data[idx + 3] = 0;
+        erasedCount++;
       }
     }
   }
 
   ctx.putImageData(imgData, 0, 0);
-
-  // 3. Post-Process: Bersihkan halo putih di tepi seluruh garis
-  defringeEdges(canvas, targetR, targetG, targetB);
-
-  // 4. Bersihkan titik-titik kotor sisa kompresi
-  cleanStrayArtifacts(canvas, { thresholdAlpha: 25 });
-
-  // 5. Lindungi lubang jarum mikroskopis di dalam objek
-  if (appState.protectHoles) {
-    healObjectHoles(canvas, item.originalCanvas, 12);
-  }
 
   // Sync to workingCanvas
   const workCtx = item.workingCanvas.getContext('2d');
@@ -1125,7 +1047,7 @@ function shootColor(ix, iy) {
   item.redoStack = [];
 
   updateActiveThumb();
-  showToast(`🎯 Latar & lubang huruf bersih tanpa bercak putih! (${erasedCount.toLocaleString()} px)`);
+  showToast(`🎯 Latar berhasil ditembak presisi sesuai warna & area! (${erasedCount.toLocaleString()} px)`);
 }
 
 /* ==========================================================================
@@ -1950,6 +1872,16 @@ function setupEventListeners() {
     appState.colorTolerance = parseInt(e.target.value, 10);
     els.colorToleranceDisplay.textContent = `${appState.colorTolerance}%`;
   });
+
+  if (els.colorTargetSegmentBtns) {
+    els.colorTargetSegmentBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        els.colorTargetSegmentBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        appState.isContiguousColor = btn.getAttribute('data-target') === 'contiguous';
+      });
+    });
+  }
 
   if (els.checkContiguousColor) {
     els.checkContiguousColor.addEventListener('change', (e) => {
