@@ -18,9 +18,9 @@ const appState = {
   // Cutout Methods State (4 Tools: Tembak Warna, Pulih Otomatis, Kuas Hapus, Kuas Pulihkan)
   cutoutMode: 'color-wand', // 'color-wand' | 'restore-wand' | 'erase' | 'restore'
   brushSize: 30,
-  colorTolerance: 25,
+  colorTolerance: 12,
   isContiguousColor: true,
-  restoreTolerance: 25,
+  restoreTolerance: 12,
   isContiguousRestore: true,
   restoreFillType: 'color', // 'color' | 'all-transparent'
   protectHoles: true,
@@ -961,9 +961,9 @@ function shootColor(ix, iy) {
   const data = imgData.data;
 
   const startIdx = (iy * w + ix) * 4;
-  const targetR = data[startIdx];
-  const targetG = data[startIdx + 1];
-  const targetB = data[startIdx + 2];
+  let targetR = data[startIdx];
+  let targetG = data[startIdx + 1];
+  let targetB = data[startIdx + 2];
   const targetA = data[startIdx + 3];
 
   if (targetA === 0) {
@@ -971,15 +971,32 @@ function shootColor(ix, iy) {
     return;
   }
 
-  // Toleransi Euclidean distance threshold (sama persis dengan rumus Pulihkan yang presisi)
-  const maxDist = (appState.colorTolerance / 100) * 441.67;
+  // Jika titik pada canvas sudah semi-transparan, ambil sample warna murni dari foto asli
+  if (targetA < 250 && item.originalCanvas) {
+    const origCtx = item.originalCanvas.getContext('2d', { willReadFrequently: true });
+    const origPixel = origCtx.getImageData(ix, iy, 1, 1).data;
+    if (origPixel[3] > 0) {
+      targetR = origPixel[0];
+      targetG = origPixel[1];
+      targetB = origPixel[2];
+    }
+  }
+
+  // Toleransi Ketat Presisi (Strict Per-Channel Delta & Euclidean Threshold):
+  // Menjamin jika ada beberapa warna putih (a, b, c, d), tembak di putih 'a' HANYA menghapus 'a'
+  // dan TIDAK merembet ke 'b', 'c', atau 'd'.
+  const tol = Math.max(1, appState.colorTolerance);
+  const maxDistSq = (tol * 1.414) * (tol * 1.414);
 
   function isMatchTarget(r, g, b, a) {
     if (a === 0) return false;
-    const dr = r - targetR;
-    const dg = g - targetG;
-    const db = b - targetB;
-    return Math.sqrt(dr * dr + dg * dg + db * db) <= maxDist;
+    const dr = Math.abs(r - targetR);
+    const dg = Math.abs(g - targetG);
+    const db = Math.abs(b - targetB);
+    // Batas perbedaan per-channel ketat
+    if (dr > tol || dg > tol || db > tol) return false;
+    // Batas jarak Euclidean 3D ruang warna
+    return (dr * dr + dg * dg + db * db) <= maxDistSq;
   }
 
   let erasedCount = 0;
@@ -1084,15 +1101,17 @@ function shootRestore(ix, iy) {
     return;
   }
 
-  // Tolerance Euclidean distance threshold
-  const maxDist = (appState.restoreTolerance / 100) * 441.67;
+  // Toleransi Ketat Presisi (Strict Per-Channel Delta & Euclidean Threshold)
+  const tol = Math.max(1, appState.restoreTolerance);
+  const maxDistSq = (tol * 1.414) * (tol * 1.414);
 
   function isMatchOrig(r, g, b, a) {
     if (a === 0) return false;
-    const dr = r - origR;
-    const dg = g - origG;
-    const db = b - origB;
-    return Math.sqrt(dr * dr + dg * dg + db * db) <= maxDist;
+    const dr = Math.abs(r - origR);
+    const dg = Math.abs(g - origG);
+    const db = Math.abs(b - origB);
+    if (dr > tol || dg > tol || db > tol) return false;
+    return (dr * dr + dg * dg + db * db) <= maxDistSq;
   }
 
   let restoredCount = 0;
@@ -1870,7 +1889,7 @@ function setupEventListeners() {
   // Color Wand Controls
   els.colorToleranceInput.addEventListener('input', (e) => {
     appState.colorTolerance = parseInt(e.target.value, 10);
-    els.colorToleranceDisplay.textContent = `${appState.colorTolerance}%`;
+    els.colorToleranceDisplay.textContent = `${appState.colorTolerance}`;
   });
 
   if (els.colorTargetSegmentBtns) {
@@ -1894,7 +1913,7 @@ function setupEventListeners() {
     els.restoreToleranceInput.addEventListener('input', (e) => {
       appState.restoreTolerance = parseInt(e.target.value, 10);
       if (els.restoreToleranceDisplay) {
-        els.restoreToleranceDisplay.textContent = `${appState.restoreTolerance}%`;
+        els.restoreToleranceDisplay.textContent = `${appState.restoreTolerance}`;
       }
     });
   }
