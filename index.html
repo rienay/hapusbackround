@@ -443,10 +443,41 @@
                   <div class="field-hint-text" id="brush-hint-text">💡 Sapukan kuas pada gambar untuk menghapus.</div>
                 </div>
 
+                <!-- Seksi Haluskan & Hilangkan Garis Putih (Edge Smoothing & De-Halo) -->
+                <div class="side-card-divider mt-14 mb-10"></div>
+                <div class="side-card-field mb-10">
+                  <div class="field-header">
+                    <span>✨ Penghalus Tepi & Anti-Garis Putih</span>
+                  </div>
+                  <button type="button" class="btn-smooth-edges-full" id="btn-smooth-edges-action">
+                    <span>🪄 1-Klik Haluskan & Hilangkan Garis Putih</span>
+                  </button>
+                </div>
+
+                <div class="smooth-sub-sliders" id="smooth-sub-sliders" style="display: flex; flex-direction: column; gap: 8px;">
+                  <div class="side-card-field">
+                    <div class="field-header">
+                      <span>Kikis Garis Putih (Choke)</span>
+                      <span id="edge-choke-display">1.5px</span>
+                    </div>
+                    <input type="range" id="edge-choke-input" min="0" max="4" step="0.5" value="1.5" />
+                    <div class="field-hint-text">💡 Menghilangkan sisa garis/halo putih di sekeliling bunga & jarum.</div>
+                  </div>
+
+                  <div class="side-card-field">
+                    <div class="field-header">
+                      <span>Kehalusan Tepi (Feather)</span>
+                      <span id="edge-feather-display">1.5px</span>
+                    </div>
+                    <input type="range" id="edge-feather-input" min="0" max="4" step="0.5" value="1.5" />
+                    <div class="field-hint-text">💡 Menghaluskan tepi bergerigi agar melengkung rapi & natural.</div>
+                  </div>
+                </div>
+
                 <!-- Bottom Actions -->
                 <div class="side-card-actions mt-14" style="display: flex; flex-direction: column; gap: 8px;">
                   <button type="button" class="btn-clean-dots-full" id="btn-heal-and-clean-panel">
-                    <span>✨ Rapikan Gambar Otomatis</span>
+                    <span>✨ Rapikan Gambar Lengkap</span>
                   </button>
                   <button type="button" class="btn-subtle-full" id="btn-reset-cutout">
                     <span>↺ Reset ke Foto Asli Awal</span>

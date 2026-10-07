@@ -100,6 +100,13 @@ const els = {
   btnResetCutout: document.getElementById('btn-reset-cutout'),
   brushCursorIndicator: document.getElementById('brush-cursor-indicator'),
 
+  // Smooth & Defringe Controls
+  btnSmoothEdgesAction: document.getElementById('btn-smooth-edges-action'),
+  edgeChokeInput: document.getElementById('edge-choke-input'),
+  edgeChokeDisplay: document.getElementById('edge-choke-display'),
+  edgeFeatherInput: document.getElementById('edge-feather-input'),
+  edgeFeatherDisplay: document.getElementById('edge-feather-display'),
+
   // Download Split Dropdown
   btnMainDownload: document.getElementById('btn-main-download'),
   btnDownloadOptionsToggle: document.getElementById('btn-download-options-toggle'),
@@ -758,57 +765,243 @@ function healObjectHoles(canvas, originalCanvas, maxHoleSize = 12) {
   return healedCount;
 }
 
-/* Pembersih Halo Tepi & De-kontaminasi Warna (Menghilangkan garis putih di sekitar outline) */
-function defringeEdges(canvas, targetR = 255, targetG = 255, targetB = 255) {
+/* ==========================================================================
+   Pembersih Garis Putih & Penghalus Tepi (Anti-Halo & Feathering Matting)
+   Menghilangkan garis putih/halo di sekeliling bunga & jarum, serta membuat tepi mulus natural.
+   ========================================================================== */
+function smoothAndDefringeCanvas(canvas, options = {}) {
+  const choke = options.choke !== undefined ? options.choke : 1.5;
+  const smoothRadius = options.smooth !== undefined ? options.smooth : 1.5;
+  const decontaminate = options.decontaminate !== undefined ? options.decontaminate : true;
+
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const w = canvas.width;
   const h = canvas.height;
   const imgData = ctx.getImageData(0, 0, w, h);
   const data = imgData.data;
 
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const idx = (y * w + x) * 4;
-      const a = data[idx + 3];
-      if (a === 0) continue;
+  // 1. Ambil alpha array
+  const alpha = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    alpha[i] = data[i * 4 + 3];
+  }
 
-      let isBorder = false;
-      if (x === 0 || x === w - 1 || y === 0 || y === h - 1) {
-        isBorder = true;
-      } else {
-        if (data[((y - 1) * w + x) * 4 + 3] === 0 ||
-            data[((y + 1) * w + x) * 4 + 3] === 0 ||
-            data[(y * w + (x - 1)) * 4 + 3] === 0 ||
-            data[(y * w + (x + 1)) * 4 + 3] === 0) {
-          isBorder = true;
+  // 2. Kikis sisa garis putih (Choke / Erode outer rim)
+  let workingAlpha = new Uint8Array(alpha);
+  if (choke > 0) {
+    const chokeR = Math.ceil(choke);
+    const borderList = [];
+
+    // Deteksi piksel batas tepi yang bersebelahan dengan transparansi
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x;
+        if (alpha[idx] === 0) continue;
+        if (x === 0 || x === w - 1 || y === 0 || y === h - 1 ||
+            alpha[idx - 1] === 0 || alpha[idx + 1] === 0 ||
+            alpha[idx - w] === 0 || alpha[idx + w] === 0) {
+          borderList.push(x, y);
+        }
+      }
+    }
+
+    if (borderList.length > 0) {
+      const distMap = new Float32Array(w * h);
+      distMap.fill(999);
+
+      for (let i = 0; i < borderList.length; i += 2) {
+        const bx = borderList[i];
+        const by = borderList[i + 1];
+        const yMin = Math.max(0, by - chokeR);
+        const yMax = Math.min(h - 1, by + chokeR);
+        const xMin = Math.max(0, bx - chokeR);
+        const xMax = Math.min(w - 1, bx + chokeR);
+
+        for (let ny = yMin; ny <= yMax; ny++) {
+          for (let nx = xMin; nx <= xMax; nx++) {
+            const nIdx = ny * w + nx;
+            if (alpha[nIdx] > 0) {
+              const d = Math.hypot(nx - bx, ny - by);
+              if (d < distMap[nIdx]) {
+                distMap[nIdx] = d;
+              }
+            }
+          }
         }
       }
 
-      if (isBorder) {
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-        const dist = Math.hypot(r - targetR, g - targetG, b - targetB);
-
-        // Jika piksel tepi hampir sama dengan warna background (sisa halo putih)
-        if (dist < 75) {
-          data[idx + 3] = 0; // Hapus halo kotor seketika
-        } else if (dist < 155) {
-          // De-kontaminasi warna tepi: buang cahaya putih background agar warna outline tetap solid
-          const factor = (dist - 75) / 80;
-          data[idx + 3] = Math.min(a, Math.round(255 * factor));
-          const newAlpha = data[idx + 3] / 255;
-          if (newAlpha > 0.08) {
-            data[idx] = Math.max(0, Math.min(255, Math.round((r - (1 - newAlpha) * targetR) / newAlpha)));
-            data[idx + 1] = Math.max(0, Math.min(255, Math.round((g - (1 - newAlpha) * targetG) / newAlpha)));
-            data[idx + 2] = Math.max(0, Math.min(255, Math.round((b - (1 - newAlpha) * targetB) / newAlpha)));
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = y * w + x;
+          if (alpha[idx] > 0 && distMap[idx] <= choke) {
+            if (distMap[idx] <= Math.max(0, choke - 0.7)) {
+              workingAlpha[idx] = 0;
+            } else {
+              const factor = (distMap[idx] - Math.max(0, choke - 0.7)) / 0.7;
+              workingAlpha[idx] = Math.round(alpha[idx] * Math.max(0, Math.min(1, factor)));
+            }
           }
         }
       }
     }
   }
 
+  // 3. Haluskan tepi bergerigi (Feather Anti-Aliasing)
+  let finalAlpha = new Uint8Array(workingAlpha);
+  if (smoothRadius > 0) {
+    const sR = Math.max(1, Math.round(smoothRadius));
+    const blurBand = new Uint8Array(w * h);
+
+    // Cari kontur batas
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x;
+        const v = workingAlpha[idx];
+        if (v > 0 && v < 255) {
+          blurBand[idx] = 1;
+        } else if (v === 255) {
+          if ((x > 0 && workingAlpha[idx - 1] < 255) ||
+              (x < w - 1 && workingAlpha[idx + 1] < 255) ||
+              (y > 0 && workingAlpha[idx - w] < 255) ||
+              (y < h - 1 && workingAlpha[idx + w] < 255)) {
+            blurBand[idx] = 1;
+          }
+        }
+      }
+    }
+
+    // Perluas zona blur selebar radius
+    for (let step = 0; step < sR; step++) {
+      const nextBand = new Uint8Array(blurBand);
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const idx = y * w + x;
+          if (blurBand[idx]) {
+            nextBand[idx - 1] = 1;
+            nextBand[idx + 1] = 1;
+            nextBand[idx - w] = 1;
+            nextBand[idx + w] = 1;
+          }
+        }
+      }
+      blurBand.set(nextBand);
+    }
+
+    // Horizontal pass
+    const tempH = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x;
+        if (!blurBand[idx]) {
+          tempH[idx] = workingAlpha[idx];
+          continue;
+        }
+        let sum = 0;
+        let wSum = 0;
+        for (let dx = -sR; dx <= sR; dx++) {
+          const nx = x + dx;
+          if (nx >= 0 && nx < w) {
+            const wgt = 1 / (1 + Math.abs(dx));
+            sum += workingAlpha[y * w + nx] * wgt;
+            wSum += wgt;
+          }
+        }
+        tempH[idx] = sum / wSum;
+      }
+    }
+
+    // Vertical pass
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x;
+        if (!blurBand[idx]) {
+          finalAlpha[idx] = workingAlpha[idx];
+          continue;
+        }
+        let sum = 0;
+        let wSum = 0;
+        for (let dy = -sR; dy <= sR; dy++) {
+          const ny = y + dy;
+          if (ny >= 0 && ny < h) {
+            const wgt = 1 / (1 + Math.abs(dy));
+            sum += tempH[ny * w + x] * wgt;
+            wSum += wgt;
+          }
+        }
+        finalAlpha[idx] = Math.max(0, Math.min(255, Math.round(sum / wSum)));
+      }
+    }
+  }
+
+  // 4. De-kontaminasi warna tepi (ganti warna tepi yang tercampur putih latar dengan warna asli objek)
+  if (decontaminate) {
+    const searchR = 3;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = y * w + x;
+        const curA = finalAlpha[idx];
+        if (curA === 0 || curA >= 240) continue;
+
+        let bestDist = 999;
+        let bestR = data[idx * 4];
+        let bestG = data[idx * 4 + 1];
+        let bestB = data[idx * 4 + 2];
+
+        const yMin = Math.max(0, y - searchR);
+        const yMax = Math.min(h - 1, y + searchR);
+        const xMin = Math.max(0, x - searchR);
+        const xMax = Math.min(w - 1, x + searchR);
+
+        for (let ny = yMin; ny <= yMax; ny++) {
+          for (let nx = xMin; nx <= xMax; nx++) {
+            const nPos = ny * w + nx;
+            if (workingAlpha[nPos] >= 200) {
+              const d = Math.hypot(x - nx, y - ny);
+              if (d < bestDist) {
+                bestDist = d;
+                const nIdx = nPos * 4;
+                bestR = data[nIdx];
+                bestG = data[nIdx + 1];
+                bestB = data[nIdx + 2];
+              }
+            }
+          }
+        }
+
+        if (bestDist < 999) {
+          data[idx * 4] = bestR;
+          data[idx * 4 + 1] = bestG;
+          data[idx * 4 + 2] = bestB;
+        }
+      }
+    }
+  }
+
+  // Tulis kembali alpha ke imageData
+  for (let i = 0; i < w * h; i++) {
+    data[i * 4 + 3] = finalAlpha[i];
+  }
+
   ctx.putImageData(imgData, 0, 0);
+}
+
+function applySmoothAndDefringe(choke = 1.5, smooth = 1.5) {
+  const item = getActiveItem();
+  if (!item) return;
+
+  const canvas = els.brushCanvas;
+  smoothAndDefringeCanvas(canvas, { choke, smooth, decontaminate: true });
+
+  const workCtx = item.workingCanvas.getContext('2d');
+  workCtx.clearRect(0, 0, item.width, item.height);
+  workCtx.drawImage(canvas, 0, 0);
+
+  const ctx = canvas.getContext('2d');
+  item.history.push(ctx.getImageData(0, 0, item.width, item.height));
+  item.redoStack = [];
+
+  updateActiveThumb();
+  showToast(`🪄 Tepi berhasil dihaluskan & garis putih dibersihkan! (Kikis: ${choke}px, Halus: ${smooth}px)`);
 }
 
 function tidyImageComplete() {
@@ -816,8 +1009,8 @@ function tidyImageComplete() {
   if (!item) return;
 
   const canvas = els.brushCanvas;
-  // 1. Defringe edges untuk hilangkan halo putih di sekitar tepi objek
-  defringeEdges(canvas, 255, 255, 255);
+  // 1. Defringe & Smooth edges untuk hilangkan halo putih di sekitar tepi objek & haluskan gerigi
+  smoothAndDefringeCanvas(canvas, { choke: 1.5, smooth: 1.5, decontaminate: true });
   // 2. Clear isolated stray dots and floating specks in background
   const cleaned = cleanStrayArtifacts(canvas, { thresholdAlpha: 30 });
   // 3. Heal tiny pinholes
@@ -834,7 +1027,7 @@ function tidyImageComplete() {
   item.redoStack = [];
 
   updateActiveThumb();
-  showToast('✨ Gambar rapi! Halo putih dibersihkan & tepi outline dihaluskan.');
+  showToast('✨ Gambar rapi sempurna! Garis putih hilang & seluruh tepi objek mulus.');
 }
 
 /* ==========================================================================
@@ -1053,6 +1246,9 @@ function shootColor(ix, iy) {
   }
 
   ctx.putImageData(imgData, 0, 0);
+
+  // Otomatis haluskan tepi & bersihkan garis putih di perbatasan tembakan
+  smoothAndDefringeCanvas(canvas, { choke: 1.0, smooth: 1.2, decontaminate: true });
 
   // Sync to workingCanvas
   const workCtx = item.workingCanvas.getContext('2d');
@@ -2145,6 +2341,27 @@ function setupEventListeners() {
   }
   if (els.btnHealAndCleanPanel) {
     els.btnHealAndCleanPanel.addEventListener('click', tidyImageComplete);
+  }
+
+  // Smooth & Defringe Event Listeners
+  if (els.edgeChokeInput) {
+    els.edgeChokeInput.addEventListener('input', (e) => {
+      if (els.edgeChokeDisplay) els.edgeChokeDisplay.textContent = `${e.target.value}px`;
+    });
+  }
+
+  if (els.edgeFeatherInput) {
+    els.edgeFeatherInput.addEventListener('input', (e) => {
+      if (els.edgeFeatherDisplay) els.edgeFeatherDisplay.textContent = `${e.target.value}px`;
+    });
+  }
+
+  if (els.btnSmoothEdgesAction) {
+    els.btnSmoothEdgesAction.addEventListener('click', () => {
+      const choke = els.edgeChokeInput ? parseFloat(els.edgeChokeInput.value) : 1.5;
+      const smooth = els.edgeFeatherInput ? parseFloat(els.edgeFeatherInput.value) : 1.5;
+      applySmoothAndDefringe(choke, smooth);
+    });
   }
 
   if (els.checkProtectHoles) {

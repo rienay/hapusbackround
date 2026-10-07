@@ -2,7 +2,7 @@ import io
 import os
 import numpy as np
 import rembg
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageFilter
 
 _sessions = {}
 
@@ -74,5 +74,13 @@ def remove_background(
             alpha_matting_base_size=base_size,
             post_process_mask=True
         )
+
+    # Post-process: Anti-aliasing halus pada alpha agar potongan tepi mulus dan tidak bergerigi
+    try:
+        r, g, b, a = result.split()
+        a_smooth = a.filter(ImageFilter.GaussianBlur(radius=0.7))
+        result = Image.merge("RGBA", (r, g, b, a_smooth))
+    except Exception as e:
+        print(f"[AI Engine] Error smoothing alpha: {e}")
 
     return result
